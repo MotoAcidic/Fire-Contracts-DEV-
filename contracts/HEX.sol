@@ -544,7 +544,12 @@ contract GlobalsAndUtility is ERC20 {
     event Claim(
         uint256 data0,
         uint256 data1,
+        bytes20 indexed hexAddr,
         bytes20 indexed abetAddr,
+        bytes20 indexed becnAddr,
+        bytes20 indexed xapAddr,
+        bytes20 indexed xxxAddr,
+        bytes20 indexed beezAddr,
         address indexed claimToAddr,
         address indexed referrerAddr
     );
@@ -644,17 +649,47 @@ contract GlobalsAndUtility is ERC20 {
     string public constant symbol = "FIRE";
     uint8 public constant decimals = 8;
 
+    /* HEX per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
+    uint256 private constant HEX_PER_FIRE = 10 ** uint256(decimals); // 1e8
+    uint256 private constant FIRE_PER_HEX = 1e4;
+    uint256 private constant SATOSHIS_PER_HEX = 1e8;
+    uint256 internal constant HEX_PER_SATOSHI = HEX_PER_FIRE / SATOSHIS_PER_HEX * FIRE_PER_HEX;
     /* ABET per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
     uint256 private constant ABET_PER_FIRE = 10 ** uint256(decimals); // 1e8
     uint256 private constant FIRE_PER_ABET = 1e4;
     uint256 private constant SATOSHIS_PER_ABET = 1e8;
     uint256 internal constant ABET_PER_SATOSHI = ABET_PER_FIRE / SATOSHIS_PER_ABET * FIRE_PER_ABET;
+    /* BECN per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
+    uint256 private constant BECN_PER_FIRE = 10 ** uint256(decimals); // 1e8
+    uint256 private constant FIRE_PER_BECN = 1e4;
+    uint256 private constant SATOSHIS_PER_BECN = 1e8;
+    uint256 internal constant BECN_PER_SATOSHI = BECN_PER_FIRE / SATOSHIS_PER_BECN * FIRE_PER_BECN;
+    /* XAP per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
+    uint256 private constant XAP_PER_FIRE = 10 ** uint256(decimals); // 1e8
+    uint256 private constant FIRE_PER_XAP = 1e4;
+    uint256 private constant SATOSHIS_PER_XAP = 1e8;
+    uint256 internal constant XAP_PER_SATOSHI = XAP_PER_FIRE / SATOSHIS_PER_XAP * FIRE_PER_XAP;
+    /* XXX per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
+    uint256 private constant XXX_PER_FIRE = 10 ** uint256(decimals); // 1e8
+    uint256 private constant FIRE_PER_XXX = 1e4;
+    uint256 private constant SATOSHIS_PER_XXX = 1e8;
+    uint256 internal constant XXX_PER_SATOSHI = XXX_PER_FIRE / SATOSHIS_PER_XXX * FIRE_PER_XXX;
+    /* BEEZ per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
+    uint256 private constant BEEZ_PER_FIRE = 10 ** uint256(decimals); // 1e8
+    uint256 private constant FIRE_PER_BEEZ = 1e4;
+    uint256 private constant SATOSHIS_PER_BEEZ = 1e8;
+    uint256 internal constant BEEZ_PER_SATOSHI = BEEZ_PER_FIRE / SATOSHIS_PER_BEEZ * FIRE_PER_BEEZ;
 
     /* Time of contract launch (2019-12-03T00:00:00Z) */
     uint256 internal constant LAUNCH_TIME = 1575331200;
 
-    /* Size of a ABET or Shares uint */
+    /* Size of a Projects or Shares uint */
+    uint256 internal constant HEX_UINT_SIZE = 72;
     uint256 internal constant ABET_UINT_SIZE = 72;
+    uint256 internal constant BECN_UINT_SIZE = 72;
+    uint256 internal constant XAP_UINT_SIZE = 72;
+    uint256 internal constant XXX_UINT_SIZE = 72;
+    uint256 internal constant BEEZ_UINT_SIZE = 72;
 
     /* Size of a transform lobby entry index uint */
     uint256 internal constant XF_LOBBY_ENTRY_INDEX_SIZE = 40;
@@ -704,10 +739,20 @@ contract GlobalsAndUtility is ERC20 {
     uint256 internal constant CLAIMABLE_SATOSHIS_TOTAL = 910087996911001;
 
     /* Number of claimable ABET addresses in UTXO snapshot */
+    uint256 internal constant CLAIMABLE_HEX_ADDR_COUNT = 27997742;
     uint256 internal constant CLAIMABLE_ABET_ADDR_COUNT = 27997742;
+    uint256 internal constant CLAIMABLE_BECN_ADDR_COUNT = 27997742;
+    uint256 internal constant CLAIMABLE_XAP_ADDR_COUNT = 27997742;
+    uint256 internal constant CLAIMABLE_XXX_ADDR_COUNT = 27997742;
+    uint256 internal constant CLAIMABLE_BEEZ_ADDR_COUNT = 27997742;
 
     /* Largest ABET address Satoshis balance in UTXO snapshot (sanity check) */
+    uint256 internal constant MAX_HEX_ADDR_BALANCE_SATOSHIS = 25550214098481;
     uint256 internal constant MAX_ABET_ADDR_BALANCE_SATOSHIS = 25550214098481;
+    uint256 internal constant MAX_BECN_ADDR_BALANCE_SATOSHIS = 25550214098481;
+    uint256 internal constant MAX_XAP_ADDR_BALANCE_SATOSHIS = 25550214098481;
+    uint256 internal constant MAX_XXX_ADDR_BALANCE_SATOSHIS = 25550214098481;
+    uint256 internal constant MAX_BEEZ_ADDR_BALANCE_SATOSHIS = 25550214098481;
 
     /* Percentage of total claimed ABET that will be auto-staked from a claim */
     uint256 internal constant AUTO_STAKE_CLAIM_PERCENT = 90;
