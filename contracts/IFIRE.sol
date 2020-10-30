@@ -15,10 +15,6 @@ contract FIREData {
     string public constant symbol = "FIRE";
     uint8 public constant decimals = 8;
 
-/********************************************************************************************************************/
-/********************************************* Project Specific Params *********************************************/
-/******************************************************************************************************************/
-
     /* Embers per Satoshi = 10,000 * 1e8 / 1e8 = 1e4 */
     uint256 public constant EMBERS_PER_FIRE = 10 ** uint256(decimals); // 1e8
     //HEX
@@ -41,10 +37,6 @@ contract FIREData {
     uint256 public constant FIRE_PER_XXX = 1e4;
     uint256 public constant SATOSHIS_PER_XXX = 1e8;
     uint256 public constant EMBERS_PER_SATOSHI_XXX = EMBERS_PER_FIRE / SATOSHIS_PER_XXX * FIRE_PER_XXX;
-    //BEEZ
-    uint256 public constant FIRE_PER_BEEZ = 1e4;
-    uint256 public constant SATOSHIS_PER_BEEZ = 1e8;
-    uint256 public constant EMBERS_PER_SATOSHI_BEEZ = EMBERS_PER_FIRE / SATOSHIS_PER_BEEZ * FIRE_PER_BEEZ;
 
     /* Total Satoshis from all COINS addresses in UTXO snapshot */
     uint256 public constant FULL_SATOSHIS_TOTAL_HEX = 1807766732160668;
@@ -52,32 +44,23 @@ contract FIREData {
     uint256 public constant FULL_SATOSHIS_TOTAL_BECN = 1807766732160668;
     uint256 public constant FULL_SATOSHIS_TOTAL_XAP = 1807766732160668;
     uint256 public constant FULL_SATOSHIS_TOTAL_XXX = 1807766732160668;
-    uint256 public constant FULL_SATOSHIS_TOTAL_BEEZ = 1807766732160668;
 
     /* Total Satoshis from supported COINS addresses in UTXO snapshot after applying Silly Whale */
     uint256 public constant CLAIMABLE_SATOSHIS_TOTAL = 910087996911001;
 
-    /* Number of claimable Project addresses in UTXO snapshot */
+    /* Number of claimable addresses in UTXO snapshot */
     uint256 public constant CLAIMABLE_HEX_ADDR_COUNT = 27997742;
     uint256 public constant CLAIMABLE_ABET_ADDR_COUNT = 27997742;
     uint256 public constant CLAIMABLE_BECN_ADDR_COUNT = 27997742;
     uint256 public constant CLAIMABLE_XAP_ADDR_COUNT = 27997742;
     uint256 public constant CLAIMABLE_XXX_ADDR_COUNT = 27997742;
-    uint256 public constant CLAIMABLE_BEEZ_ADDR_COUNT = 27997742;
 
-    /* Largest ABET address Satoshis balance in UTXO snapshot (sanity check) */
+    /* Largest address Satoshis balance in UTXO snapshot (sanity check) */
     uint256 public constant MAX_HEX_ADDR_BALANCE_SATOSHIS = 25550214098481;
     uint256 public constant MAX_ABET_ADDR_BALANCE_SATOSHIS = 25550214098481;
     uint256 public constant MAX_BECN_ADDR_BALANCE_SATOSHIS = 25550214098481;
     uint256 public constant MAX_XAP_ADDR_BALANCE_SATOSHIS = 25550214098481;
     uint256 public constant MAX_XXX_ADDR_BALANCE_SATOSHIS = 25550214098481;
-    uint256 public constant MAX_BEEZ_ADDR_BALANCE_SATOSHIS = 25550214098481;
-
-
-
-
-    
-
 
     /* Time of contract launch (2019-12-03T00:00:00Z) */
     uint256 public constant LAUNCH_TIME = 1575331200;
@@ -111,25 +94,43 @@ contract FIREData {
     uint256 public constant BIG_PAY_DAY = CLAIM_PHASE_END_DAY + 1;
 
     /* Root hash of the UTXO Merkle tree */
-    bytes32 public constant MERKLE_TREE_ROOT = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec;
+    bytes32 public constant MERKLE_TREE_ROOT_HEX = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec;  //Block
+    bytes32 public constant MERKLE_TREE_ROOT_ABET = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec; //Block
+    bytes32 public constant MERKLE_TREE_ROOT_BECN = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec; //Block
+    bytes32 public constant MERKLE_TREE_ROOT_XAP = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec;  //Block
+    bytes32 public constant MERKLE_TREE_ROOT_XXX = 0x4e831acb4223b66de3b3d2e54a2edeefb0de3d7916e2886a4b134d9764d41bec;  //Block
 
     /* Size of a Satoshi claim uint in a Merkle leaf */
-    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE = 45;
+    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE_HEX = 45;
+    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE_ABET = 45;
+    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE_BECN = 45;
+    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE_XAP = 45;
+    uint256 public constant MERKLE_LEAF_SATOSHI_SIZE_XXX = 45;
 
+    /* Zero-fill between HEX address and Satoshis in a Merkle leaf */
+    uint256 public constant MERKLE_LEAF_FILL_SIZE_HEX = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE_HEX;
+    uint256 public constant MERKLE_LEAF_FILL_BASE_HEX = (1 << MERKLE_LEAF_FILL_SIZE_HEX) - 1;
+    uint256 public constant MERKLE_LEAF_FILL_MASK_HEX = MERKLE_LEAF_FILL_BASE_HEX << MERKLE_LEAF_SATOSHI_SIZE_HEX;
     /* Zero-fill between ABET address and Satoshis in a Merkle leaf */
-    uint256 public constant MERKLE_LEAF_FILL_SIZE = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE;
-    uint256 public constant MERKLE_LEAF_FILL_BASE = (1 << MERKLE_LEAF_FILL_SIZE) - 1;
-    uint256 public constant MERKLE_LEAF_FILL_MASK = MERKLE_LEAF_FILL_BASE << MERKLE_LEAF_SATOSHI_SIZE;
+    uint256 public constant MERKLE_LEAF_FILL_SIZE_ABET = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE_ABET;
+    uint256 public constant MERKLE_LEAF_FILL_BASE_ABET = (1 << MERKLE_LEAF_FILL_SIZE_ABET) - 1;
+    uint256 public constant MERKLE_LEAF_FILL_MASK_ABET = MERKLE_LEAF_FILL_BASE_ABET << MERKLE_LEAF_SATOSHI_SIZE_ABET;
+    /* Zero-fill between BECN address and Satoshis in a Merkle leaf */
+    uint256 public constant MERKLE_LEAF_FILL_SIZE_BECN = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE_BECN;
+    uint256 public constant MERKLE_LEAF_FILL_BASE_BECN = (1 << MERKLE_LEAF_FILL_SIZE_BECN) - 1;
+    uint256 public constant MERKLE_LEAF_FILL_MASK_BECN = MERKLE_LEAF_FILL_BASE_BECN << MERKLE_LEAF_SATOSHI_SIZE_BECN;
+    /* Zero-fill between XAP address and Satoshis in a Merkle leaf */
+    uint256 public constant MERKLE_LEAF_FILL_SIZE_XAP = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE_XAP;
+    uint256 public constant MERKLE_LEAF_FILL_BASE_XAP = (1 << MERKLE_LEAF_FILL_SIZE_XAP) - 1;
+    uint256 public constant MERKLE_LEAF_FILL_MASK_XAP = MERKLE_LEAF_FILL_BASE_XAP << MERKLE_LEAF_SATOSHI_SIZE_XAP;
+    /* Zero-fill between XXX address and Satoshis in a Merkle leaf */
+    uint256 public constant MERKLE_LEAF_FILL_SIZE_XXX = 256 - 160 - MERKLE_LEAF_SATOSHI_SIZE_XXX;
+    uint256 public constant MERKLE_LEAF_FILL_BASE_XXX = (1 << MERKLE_LEAF_FILL_SIZE_XXX) - 1;
+    uint256 public constant MERKLE_LEAF_FILL_MASK_XXX = MERKLE_LEAF_FILL_BASE_XXX << MERKLE_LEAF_SATOSHI_SIZE_XXX;
 
     /* Size of a Satoshi total uint */
     uint256 public constant SATOSHI_UINT_SIZE = 51;
     uint256 public constant SATOSHI_UINT_MASK = (1 << SATOSHI_UINT_SIZE) - 1;
-
-
-
-
-
-
 
     /* Percentage of total claimed Embers that will be auto-staked from a claim */
     uint256 public constant AUTO_STAKE_CLAIM_PERCENT = 90;
@@ -174,25 +175,24 @@ contract FIREData {
     uint8 public constant CLAIM_PARAM_HASH_BYTE_LEN = 12;
     uint8 public constant CLAIM_PARAM_HASH_FIRE_LEN = CLAIM_PARAM_HASH_BYTE_LEN * 2;
 
-    uint8 public constant HEX_SIG_PREFIX_LEN = 24;
+    uint8 public constant HEX_SIG_PREFIX_LEN = 20;
     bytes24 public constant HEX_SIG_PREFIX_STR = "HEX Signed Message:\n";
     uint8 public constant ABET_SIG_PREFIX_LEN = 24;
-    bytes24 public constant ABET_SIG_PREFIX_STR = "ABET Signed Message:\n";
+    bytes24 public constant ABET_SIG_PREFIX_STR = "Altbet Signed Message:\n";
     uint8 public constant BECN_SIG_PREFIX_LEN = 24;
-    bytes24 public constant BECN_SIG_PREFIX_STR = "BECN Signed Message:\n";
+    bytes24 public constant BECN_SIG_PREFIX_STR = "Becn Signed Message:\n";
     uint8 public constant XAP_SIG_PREFIX_LEN = 24;
-    bytes24 public constant XAP_SIG_PREFIX_STR = "XAP Signed Message:\n";
+    bytes24 public constant XAP_SIG_PREFIX_STR = "Xap Signed Message:\n";
     uint8 public constant XXX_SIG_PREFIX_LEN = 24;
-    bytes24 public constant XXX_SIG_PREFIX_STR = "XXX Signed Message:\n";
-    uint8 public constant BEEZ_SIG_PREFIX_LEN = 24;
-    bytes24 public constant BEEZ_SIG_PREFIX_STR = "BEEZ Signed Message:\n";
+    bytes24 public constant XXX_SIG_PREFIX_STR = "Xxx Signed Message:\n";
 
     bytes public constant STD_CLAIM_PREFIX_STR = "Claim_FIRE_to_0x";
-    bytes public constant OLD_CLAIM_PREFIX_STR = "Claim_ProjectsFIRE_to_0x";
+    bytes public constant OLD_CLAIM_PREFIX_STR = "Claim_BitcoinFIRE_to_0x";
 
     bytes16 public constant FIRE_DIGITS = "0123456789abcdef";
 
     /* Claim flags passed to hexAddressClaim()  */
+    uint8 public constant CLAIM_FLAG_MSG_PREFIX_OLD = 1 << 0;
     uint8 public constant CLAIM_FLAG_HEX_ADDR_COMPRESSED = 1 << 1;
     uint8 public constant CLAIM_FLAG_HEX_ADDR_P2WPKH_IN_P2SH = 1 << 2;
     uint8 public constant CLAIM_FLAG_HEX_ADDR_BECH32 = 1 << 3;
@@ -212,11 +212,7 @@ contract FIREData {
     uint8 public constant CLAIM_FLAG_XXX_ADDR_COMPRESSED = 1 << 1;
     uint8 public constant CLAIM_FLAG_XXX_ADDR_P2WPKH_IN_P2SH = 1 << 2;
     uint8 public constant CLAIM_FLAG_XXX_ADDR_BECH32 = 1 << 3;
-    /* Claim flags passed to beezAddressClaim()  */
-    uint8 public constant CLAIM_FLAG_BEEZ_ADDR_COMPRESSED = 1 << 1;
-    uint8 public constant CLAIM_FLAG_BEEZ_ADDR_P2WPKH_IN_P2SH = 1 << 2;
-    uint8 public constant CLAIM_FLAG_BEEZ_ADDR_BECH32 = 1 << 3;
-    uint8 public constant CLAIM_FLAG_MSG_PREFIX_OLD = 1 << 0;
+
     uint8 public constant CLAIM_FLAG_ETH_ADDR_LOWERCASE = 1 << 4;
     
     /* Globals expanded for memory (except _latestStakeId) and compact for storage */
@@ -237,7 +233,6 @@ contract FIREData {
         uint256 _claimedBecnAddrCount;
         uint256 _claimedXapAddrCount;
         uint256 _claimedXxxAddrCount;
-        uint256 _claimedBeezAddrCount;
         //
         uint256 _currentDay;
     }
@@ -263,7 +258,6 @@ contract FIREData {
     mapping(bytes20 => bool) public becnAddressClaims;
     mapping(bytes20 => bool) public xapAddressClaims;
     mapping(bytes20 => bool) public xxxAddressClaims;
-    mapping(bytes20 => bool) public beezAddressClaims;
 
     /* Daily data */
     struct DailyDataStore {
@@ -409,49 +403,81 @@ interface IFIREUTXOClaimValidation is IFIREStakeableToken {
      * @dev PUBLIC FACING: Verify a ABET address and balance are unclaimed and part of the Merkle tree
      * @param hexAddr Hex address (binary; no base58-check encoding)
      * @param abetAddr Altbet address (binary; no base58-check encoding)
-     * @param becnAddr Bitcoin address (binary; no base58-check encoding)
-     * @param xapAddr Bitcoin address (binary; no base58-check encoding)
-     * @param xxxAddr Bitcoin address (binary; no base58-check encoding)
-     * @param beezAddr Bitcoin address (binary; no base58-check encoding)
+     * @param becnAddr Becn address (binary; no base58-check encoding)
+     * @param xapAddr Xap address (binary; no base58-check encoding)
+     * @param xxxAddr Xxx address (binary; no base58-check encoding)
      * @param rawSatoshis Raw ABET address balance in Satoshis
      * @param proof Merkle tree proof
      * @return True if can be claimed
      */
+    function hexAddressIsClaimable(bytes20 hexAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        view
+        returns (bool);
     function abetAddressIsClaimable(bytes20 abetAddr, uint256 rawSatoshis, bytes32[] calldata proof)
         external
         view
         returns (bool);
-    /**
-     * @dev PUBLIC FACING: Verify a Projects address and balance are part of the Merkle tree
+    function becnAddressIsClaimable(bytes20 becnAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        view
+        returns (bool);
+    function xapAddressIsClaimable(bytes20 xapAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        view
+        returns (bool);
+    function xxxAddressIsClaimable(bytes20 xxxAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        view
+        returns (bool);
+    /*
+     * @dev PUBLIC FACING: Verify a ABET address and balance are part of the Merkle tree
      * @param hexAddr Hex address (binary; no base58-check encoding)
      * @param abetAddr Altbet address (binary; no base58-check encoding)
-     * @param becnAddr Bitcoin address (binary; no base58-check encoding)
-     * @param xapAddr Bitcoin address (binary; no base58-check encoding)
-     * @param xxxAddr Bitcoin address (binary; no base58-check encoding)
-     * @param beezAddr Bitcoin address (binary; no base58-check encoding)
+     * @param becnAddr Becn address (binary; no base58-check encoding)
+     * @param xapAddr Xap address (binary; no base58-check encoding)
+     * @param xxxAddr Xxx address (binary; no base58-check encoding)
      * @param rawSatoshis Raw ABET address balance in Satoshis
      * @param proof Merkle tree proof
      * @return True if valid
      */
-    function abetAddressIsValid(
-        bytes20 hexAddr, 
-        bytes20 abetAddr,
-        bytes20 becnAddr,
-        bytes20 xapAddr,
-        bytes20 xxxAddr,
-        bytes20 beezAddr,
-        uint256 rawSatoshis, 
-        bytes32[] calldata proof)
+    function hexAddressIsValid(bytes20 hexAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        pure
+        returns (bool);
+    function abetAddressIsValid(bytes20 abetAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        pure
+        returns (bool);
+    function becnAddressIsValid(bytes20 becnAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        pure
+        returns (bool);
+    function xapAddressIsValid(bytes20 xapAddr, uint256 rawSatoshis, bytes32[] calldata proof)
+        external
+        pure
+        returns (bool);
+    function xxxAddressIsValid(bytes20 xxxAddr, uint256 rawSatoshis, bytes32[] calldata proof)
         external
         pure
         returns (bool);
     /**
      * @dev PUBLIC FACING: Verify a Merkle proof using the UTXO Merkle tree
-     * @param merkleLeaf Leaf asserted to be present in the Merkle tree
+     * @param merkleLeaf_hex Leaf asserted to be present in the Merkle tree
+     * @param merkleLeaf_abet Leaf asserted to be present in the Merkle tree
+     * @param merkleLeaf_becn Leaf asserted to be present in the Merkle tree
+     * @param merkleLeaf_xap Leaf asserted to be present in the Merkle tree
+     * @param merkleLeaf_xxx Leaf asserted to be present in the Merkle tree
      * @param proof Generated Merkle tree proof
      * @return True if valid
      */
-    function merkleProofIsValid(bytes32 merkleLeaf, bytes32[] calldata proof)
+    function merkleProofIsValid(
+        bytes32 merkleLeaf_hex, 
+        bytes32 merkleLeaf_abet, 
+        bytes32 merkleLeaf_becn, 
+        bytes32 merkleLeaf_xap, 
+        bytes32 merkleLeaf_xxx, 
+        bytes32[] calldata proof)
         external
         pure
         returns (bool);
@@ -498,7 +524,23 @@ interface IFIREUTXOClaimValidation is IFIREStakeableToken {
      * @param claimFlags Claim flags specifying address and message formats
      * @return Derived Bitcoin address (binary; no base58-check encoding)
      */
+    function pubKeyToHexAddress(bytes32 pubKeyX, bytes32 pubKeyY, uint8 claimFlags)
+        external
+        pure
+        returns (bytes20);
     function pubKeyToAbetAddress(bytes32 pubKeyX, bytes32 pubKeyY, uint8 claimFlags)
+        external
+        pure
+        returns (bytes20);
+    function pubKeyToBecnAddress(bytes32 pubKeyX, bytes32 pubKeyY, uint8 claimFlags)
+        external
+        pure
+        returns (bytes20);
+    function pubKeyToXapAddress(bytes32 pubKeyX, bytes32 pubKeyY, uint8 claimFlags)
+        external
+        pure
+        returns (bytes20);
+    function pubKeyToXxxAddress(bytes32 pubKeyX, bytes32 pubKeyY, uint8 claimFlags)
         external
         pure
         returns (bytes20);
@@ -523,7 +565,67 @@ interface IFIREUTXORedeemableToken is IFIREUTXOClaimValidation {
      * @param referrerAddr Eth address of referring user (optional; 0x0 for no referrer)
      * @return Total number of Embers credited, if successful
      */
+    function hexAddressClaim(
+        uint256 rawSatoshis,
+        bytes32[] calldata proof,
+        address claimToAddr,
+        bytes32 pubKeyX,
+        bytes32 pubKeyY,
+        uint8 claimFlags,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256 autoStakeDays,
+        address referrerAddr
+    )
+        external
+        returns (uint256);
     function abetAddressClaim(
+        uint256 rawSatoshis,
+        bytes32[] calldata proof,
+        address claimToAddr,
+        bytes32 pubKeyX,
+        bytes32 pubKeyY,
+        uint8 claimFlags,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256 autoStakeDays,
+        address referrerAddr
+    )
+        external
+        returns (uint256);
+    function becnAddressClaim(
+        uint256 rawSatoshis,
+        bytes32[] calldata proof,
+        address claimToAddr,
+        bytes32 pubKeyX,
+        bytes32 pubKeyY,
+        uint8 claimFlags,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256 autoStakeDays,
+        address referrerAddr
+    )
+        external
+        returns (uint256);
+    function xapAddressClaim(
+        uint256 rawSatoshis,
+        bytes32[] calldata proof,
+        address claimToAddr,
+        bytes32 pubKeyX,
+        bytes32 pubKeyY,
+        uint8 claimFlags,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        uint256 autoStakeDays,
+        address referrerAddr
+    )
+        external
+        returns (uint256);
+    function xxxAddressClaim(
         uint256 rawSatoshis,
         bytes32[] calldata proof,
         address claimToAddr,
