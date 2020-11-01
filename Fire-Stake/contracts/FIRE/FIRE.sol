@@ -2,7 +2,7 @@ pragma solidity 0.6.0;
 
 interface IERC20 {
 
-    //function totalSupply() external view returns (uint256);
+    function totalSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);
     function allowance(address owner, address spender) external view returns (uint256);
 
@@ -23,14 +23,17 @@ interface IERC20 {
 
 
 contract ERC20 is IERC20 {
-
+    using SafeMath for uint256;
     string public constant name = "Fire Network";
     string public constant symbol = "FIRE";
     uint8 public constant decimals = 18;
-    uint256 public totalSupply = 21000000; //21m coins
-    address public contractOwner = msg.sender;
+    uint256 private _totalSupply = 21000000; //21m coins
     
-    // 5 million coins for swap of old chains
+    /* Size of a Shares uint */
+    uint256 internal constant SHARE_UINT_SIZE = 72;
+    uint256 internal constant LAUNCH_TIME = 1575331200;  /* Time of contract launch (2019-12-03T00:00:00Z) */
+    
+    // 5.25 million coins for swap of old chains
     uint256 contractPremine_ = 5000000; // 5m coins
     uint256 devPayment_ = 250000; // 250k coins
     uint256 teamPremine_ = 500000; // 500k coins
@@ -39,6 +42,14 @@ contract ERC20 is IERC20 {
     uint256 xapPremine_ = 500000; // 500k coin
     uint256 xxxPremine_ = 250000; // 250k coin
     uint256 beezPremine_ = 250000; // 250k coin
+    address public contractOwner = msg.sender;
+    address public teamAddrs = TEAM_ADDRS;
+    address public devAddrs = DEV_ADDRS;
+    address public abetAddrs = ABET_ADDRS;
+    address public becnAddrs = BECN_ADDRS;
+    address public xapAddrs = XAP_ADDRS;
+    address public xxxAddrs = XXX_ADDRS;
+    address public beezAddrs = BEEZ_ADDRS;
     address internal constant DEV_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant ABET_ADDRS = 0x0C8a92f170BaF855d3965BA8554771f673Ed69a6;
@@ -47,11 +58,14 @@ contract ERC20 is IERC20 {
     address internal constant XXX_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant BEEZ_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     
+    uint256 private constant WEEKS = 50;
+    uint256 internal constant DAYS = WEEKS * 7;
+    uint256 private constant START_DAY = 1;
+    uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     uint public rewardPerDay = 50; // Amount perday you can claim from the dividend
     uint public minNodeStakeAmount = 5000; // Min amount to needed to node stake
     uint256 public scaledRewardPerToken = blocksAday / rewardPerDay; // Calc for the reward to equal only 50 coins paid out perday
-    
 
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
     event Transfer(address indexed from, address indexed to, uint tokens);
@@ -59,10 +73,8 @@ contract ERC20 is IERC20 {
     
     mapping(address => uint256) balances;
     mapping(address => mapping (address => uint256)) allowed;
-
-    using SafeMath for uint256;
-
-   constructor() public {  
+    
+    constructor() public {  
 	balances[msg.sender] = contractPremine();
 	balances[DEV_ADDRS] = devPayment();
 	balances[TEAM_ADDRS] = teamPremine();
@@ -72,6 +84,24 @@ contract ERC20 is IERC20 {
 	balances[XXX_ADDRS] = xxxPremine();
 	balances[BEEZ_ADDRS] = beezPremine();
     } 
+    
+    /* Percentage of total claimed Hearts that will be auto-staked from a claim */
+    uint256 internal constant AUTO_STAKE_CLAIM_PERCENT = 90;
+
+    /* Stake timing parameters */
+    uint256 internal constant MIN_STAKE_DAYS = 1;
+    uint256 internal constant MIN_AUTO_STAKE_DAYS = 350;
+    uint256 internal constant MAX_STAKE_DAYS = 5555; // Approx 15 years
+    uint256 internal constant EARLY_PENALTY_MIN_DAYS = 90;
+    uint256 private constant LATE_PENALTY_GRACE_WEEKS = 2;
+    uint256 internal constant LATE_PENALTY_GRACE_DAYS = LATE_PENALTY_GRACE_WEEKS * 7;
+    uint256 private constant LATE_PENALTY_SCALE_WEEKS = 100;
+    uint256 internal constant LATE_PENALTY_SCALE_DAYS = LATE_PENALTY_SCALE_WEEKS * 7;
+    uint256 internal constant SHARE_RATE_SCALE = 1e5; /* Share rate is scaled to increase precision */
+    uint256 internal constant SHARE_RATE_UINT_SIZE = 40; /* Share rate max (after scaling) */
+    uint256 internal constant SHARE_RATE_MAX = (1 << SHARE_RATE_UINT_SIZE) - 1;
+    
+
     
     // ------------------------------------------------------------------------
     //                              Premine Functions
@@ -86,23 +116,35 @@ contract ERC20 is IERC20 {
     function xxxPremine() public view returns (uint256) { return xxxPremine_; }
     function beezPremine() public view returns (uint256) { return beezPremine_; }
     
-    // ------------------------------------------------------------------------
-    // Balance of token holder
-    // ------------------------------------------------------------------------
+    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements
+     *
+     * - `to` cannot be the zero address.
+     */
+    function mint(address account, uint256 amount) internal {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _totalSupply = _totalSupply.add(amount);
+        balances[account] = balances[account].add(amount);
+        emit Transfer(address(0), account, amount);
+    }
+    
+    function totalSupply() public override view returns (uint256) {
+        return _totalSupply;
+    }
+
     function balanceOf(address tokenOwner) public override view returns (uint256) {
         return balances[tokenOwner];
     }
-    
-    // ------------------------------------------------------------------------
-    // Change Required Tokens for payouts
-    // ------------------------------------------------------------------------
+
     function changeRequiredTokens(uint _value) public override {
         minNodeStakeAmount = _value;
     }
-    
-    // ------------------------------------------------------------------------
-    // Change reward amount payout amount
-    // ------------------------------------------------------------------------
+
     function changeNodeReward(uint _value) public override {
         rewardPerDay = _value;
     }
@@ -146,7 +188,7 @@ contract ERC20 is IERC20 {
     function burn(uint256 _value) public override returns (bool success) {
         require(balances[msg.sender] >= _value);   // Check if the sender has enough
         balances[msg.sender] -= _value;            // Subtract from the sender
-        totalSupply -= _value;                      // Updates totalSupply
+        _totalSupply -= _value;                      // Updates totalSupply
         emit Burn(msg.sender, _value);
         return true;
     }
@@ -164,12 +206,12 @@ contract ERC20 is IERC20 {
         require(_value <= allowed[_from][msg.sender]);    // Check allowance
         balances[_from] -= _value;                         // Subtract from the targeted balance
         allowed[_from][msg.sender] -= _value;             // Subtract from the sender's allowance
-        totalSupply -= _value;                              // Update totalSupply
+        _totalSupply -= _value;                              // Update totalSupply
         emit Burn(_from, _value);
         return true;
     }
+    
 }
-
 library SafeMath { 
     function sub(uint256 a, uint256 b) internal pure returns (uint256) {
       assert(b <= a);
