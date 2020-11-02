@@ -81,19 +81,19 @@ contract ERC20 is Context, IERC20 {
 
     string public constant name = "Fire Network";
     string public constant symbol = "FIRE";
-    //uint8 public constant decimals = 8;
-    uint256 _totalSupply = 21000000;
+    uint8 public constant decimals = 18;
+    uint256 _totalSupply = 21000000e18;
     uint256 internal constant LAUNCH_TIME = 1575331200;  /* Time of contract launch (2019-12-03T00:00:00Z) */
     
     // 5.25 million coins for swap of old chains
-    uint256 contractPremine_ = 5e6 * 10^8; // 5m coins
-    uint256 devPayment_ = 25e4 * 10^8; // 250k coins
-    uint256 teamPremine_ = 5e5 * 10^8; // 500k coins
-    uint256 abetPremine_ = 225e4 * 10^8; // 2.25m coin
-    uint256 becnPremine_ = 175e4 * 10^8; // 1.75m coin
-    uint256 xapPremine_ = 5e5 * 10^8; // 500k coin
-    uint256 xxxPremine_ = 25e4 * 10^8; // 250k coin
-    uint256 beezPremine_ = 25e4 * 10^8; // 250k coin
+    uint256 contractPremine_ = 5000000e18; // 5m coins
+    uint256 devPayment_ = 250000e18; // 250k coins
+    uint256 teamPremine_ = 500000e18; // 500k coins
+    uint256 abetPremine_ = 2250000e18; // 2.25m coin
+    uint256 becnPremine_ = 1750000e18; // 1.75m coin
+    uint256 xapPremine_ = 500000e18; // 500k coin
+    uint256 xxxPremine_ = 250000e18; // 250k coin
+    uint256 beezPremine_ = 250000e18; // 250k coin
     address public _owner;
     address[] internal stakeholders;
     address public contractOwner = msg.sender;
@@ -122,6 +122,7 @@ contract ERC20 is Context, IERC20 {
     event Transfer(address indexed from, address indexed to, uint tokens);
     
     mapping(address => uint256) _balances;
+    mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
@@ -140,7 +141,6 @@ contract ERC20 is Context, IERC20 {
     mint(XAP_ADDRS, xapPremine_);
     mint(XXX_ADDRS, xxxPremine_);
     mint(BEEZ_ADDRS, beezPremine_);*/
-    decimals = 8;
     emit Transfer(address(0), DEV_ADDRS, devPayment_);
     emit Transfer(address(0), msg.sender, contractPremine_);
     emit Transfer(address(0), TEAM_ADDRS, teamPremine_);
@@ -180,13 +180,16 @@ contract ERC20 is Context, IERC20 {
         return _balances[tokenOwner];
     }
 
-    function transfer(address receiver, uint256 numTokens) public override returns (bool) {
-        require(numTokens <= _balances[msg.sender]);
-        _balances[msg.sender] = _balances[msg.sender].sub(numTokens * 10^8);
-        _balances[receiver] = _balances[receiver].add(numTokens * 10^8);
-        emit Transfer(msg.sender, receiver, numTokens * 10^8);
+    function transfer(address _toAddress, uint256 _amountOfTokens) public override returns (bool) {
+        address _customerAddress = msg.sender;
+        require(_amountOfTokens <= tokenBalanceLedger_[_customerAddress]);
+
+        tokenBalanceLedger_[_customerAddress] = SafeMath.sub(tokenBalanceLedger_[_customerAddress], _amountOfTokens);
+        tokenBalanceLedger_[_toAddress] = SafeMath.add(tokenBalanceLedger_[_toAddress], _amountOfTokens);
+        emit Transfer(_customerAddress, _toAddress, _amountOfTokens);
         return true;
     }
+    
     function approve(address delegate, uint256 numTokens) public override returns (bool) {
         allowed[msg.sender][delegate] = numTokens;
         emit Approval(msg.sender, delegate, numTokens);
