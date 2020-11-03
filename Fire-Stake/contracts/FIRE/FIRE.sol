@@ -18,18 +18,6 @@ contract Context {
     }
 }
 
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
-    function circulatingSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
 library SafeMath {
 
     function add(uint a, uint b) internal pure returns (uint c) {
@@ -624,11 +612,20 @@ abstract contract AccessControl is Context {
     }
 }
 
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function circulatingSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
 contract ERC20 is Context, IERC20, AccessControl {
     using SafeMath for uint256;
-    
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     string public constant name = "Fire Network";
     string public constant symbol = "FIRE";
@@ -683,6 +680,8 @@ contract ERC20 is Context, IERC20, AccessControl {
     
     constructor() public {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _setupRole(MINTER_ROLE, msg.sender);
+    
     mint(DEV_ADDRS, devPayment_);
     mint(msg.sender, contractPremine_);
     mint(TEAM_ADDRS, teamPremine_);
@@ -702,6 +701,38 @@ contract ERC20 is Context, IERC20, AccessControl {
     emit Transfer(address(0), XXX_ADDRS, xxxPremine_);
     emit Transfer(address(0), BEEZ_ADDRS, beezPremine_);
     }
+    
+    // ------------------------------------------------------------------------
+    //                              Role Based Setup
+    // ------------------------------------------------------------------------
+    
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    
+    bytes32 public constant ABET_SWAPPER = keccak256("ABET_SWAPPER");
+    
+    function grantMinerRole(address account) public{
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
+        grantRole(MINTER_ROLE, account);
+    }
+    
+    function grantBurnerRole(address account) public{
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant burner role.");
+        grantRole(BURNER_ROLE, account);
+    }
+    
+    function grantAbetSwapRole(address account) public{
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
+        grantRole(ABET_SWAPPER, account);
+    }
+    
+    function abetSwap(address receiver, uint amount) public{
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Abet swappers can send new tokens to abet users.");
+        require(amount <= _balances[abetPremine_], "Insufficient balance.");
+        _balances[abetPremine_] -= amount;
+        _balances[receiver] += amount;
+        emit Sent(abetPremine_, receiver, amount);
+    }
 
     // ------------------------------------------------------------------------
     //                              Premine Functions
@@ -717,7 +748,7 @@ contract ERC20 is Context, IERC20, AccessControl {
     function beezPremine() public view returns (uint256) { return beezPremine_; }
     
     function mint(address account, uint256 amount) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE || MINTER_ROLE, msg.sender), "Caller is not a minter");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
         _circulatingSupply = _circulatingSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
@@ -729,11 +760,6 @@ contract ERC20 is Context, IERC20, AccessControl {
     
     function circulatingSupply() public override view returns (uint256) {
         return _circulatingSupply;
-    }
-    
-    function grantMinterRole(address account) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not a admin");
-        grantRole(MINTER_ROLE, account);
     }
 
     function balanceOf(address tokenOwner) public override view returns (uint256) {
