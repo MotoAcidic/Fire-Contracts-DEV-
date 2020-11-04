@@ -198,6 +198,33 @@ abstract contract AccessControl is Context {
     }
 }
 
+abstract contract DEX {
+    
+    event Bought(uint256 amount);
+    event Sold(uint256 amount);
+
+    IFIRE public token;
+    
+    function buy() payable public {
+        uint256 amountTobuy = msg.value;
+        uint256 dexBalance = token.balanceOf(address(this));
+        require(amountTobuy > 0, "You need to send some Ether");
+        require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
+        token.transfer(msg.sender, amountTobuy);
+        emit Bought(amountTobuy);
+    }
+    
+    function sell(uint256 amount) public {
+        require(amount > 0, "You need to sell at least some tokens");
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= amount, "Check the token allowance");
+        token.transferFrom(msg.sender, address(this), amount);
+        msg.sender.transfer(amount);
+        emit Sold(amount);
+    }
+
+}
+
 contract SwapParams {
     
     // 5.25 million coins for swap of old chains
@@ -225,33 +252,6 @@ contract SwapParams {
     address internal constant XAP_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant XXX_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant BEEZ_ADDRS = 0x96C418fFc085107aE72127FE70574754ae3D7047;
-}
-
-abstract contract DEX {
-    
-    event Bought(uint256 amount);
-    event Sold(uint256 amount);
-
-    IFIRE public token;
-    
-    function buy() payable public {
-        uint256 amountTobuy = msg.value;
-        uint256 dexBalance = token.balanceOf(address(this));
-        require(amountTobuy > 0, "You need to send some Ether");
-        require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
-        token.transfer(msg.sender, amountTobuy);
-        emit Bought(amountTobuy);
-    }
-    
-    function sell(uint256 amount) public {
-        require(amount > 0, "You need to sell at least some tokens");
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        require(allowance >= amount, "Check the token allowance");
-        token.transferFrom(msg.sender, address(this), amount);
-        msg.sender.transfer(amount);
-        emit Sold(amount);
-    }
-
 }
 
 contract FIRE is Context, IFIRE, AccessControl, SwapParams {
@@ -307,7 +307,7 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     emit Transfer(address(0), XXX_ADDRS, xxxPremine_);
     emit Transfer(address(0), BEEZ_ADDRS, beezPremine_);
     }
-
+    
     // ------------------------------------------------------------------------
     //                              Role Based Setup
     // ------------------------------------------------------------------------

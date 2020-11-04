@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.6.6+commit.6c089d02"
+		"version": "0.6.12+commit.27d51765"
 	},
 	"language": "Solidity",
 	"output": {
@@ -203,10 +203,14 @@
 			}
 		],
 		"devdoc": {
-			"methods": {}
+			"kind": "dev",
+			"methods": {},
+			"version": 1
 		},
 		"userdoc": {
-			"methods": {}
+			"kind": "user",
+			"methods": {},
+			"version": 1
 		}
 	},
 	"settings": {
@@ -226,10 +230,11 @@
 	},
 	"sources": {
 		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
-			"keccak256": "0xc29ac491acf303b913e6bf9e7aa1d79cbd9029527e795694af47b16df6e05e36",
+			"keccak256": "0x2b2af70c3da6ebd4a1c0efac03a0ce7ca953162a66153240d66067a61f1aca40",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://c05122693d5f0b0c7ba0039ff29df743e5e689b2880bc33e01e3ee36711103d0",
-				"dweb:/ipfs/QmcWSeZpjpbtbg3JDvLTWo4pzg8eR4uHDyk6rBSxufu3ec"
+				"bzz-raw://769694aed703fc4715bf2b9046b4681c84db40df0246c0b49e80f647155f63a9",
+				"dweb:/ipfs/QmUzfmbLPwpdmYMyRZnE4EYCHTdZYh4CWyUDVtFvGuJmfb"
 			]
 		}
 	},

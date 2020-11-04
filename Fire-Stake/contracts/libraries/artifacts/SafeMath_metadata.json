@@ -1,15 +1,19 @@
 {
 	"compiler": {
-		"version": "0.6.6+commit.6c089d02"
+		"version": "0.6.12+commit.27d51765"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [],
 		"devdoc": {
-			"methods": {}
+			"kind": "dev",
+			"methods": {},
+			"version": 1
 		},
 		"userdoc": {
-			"methods": {}
+			"kind": "user",
+			"methods": {},
+			"version": 1
 		}
 	},
 	"settings": {
@@ -29,10 +33,11 @@
 	},
 	"sources": {
 		"localhost/Fire-Stake/contracts/libraries/SafeMath.sol": {
-			"keccak256": "0xbe6923c9a5c2cb0e18a9ac125a91042c94448fbde7b59d48ce3ce6f085415fc5",
+			"keccak256": "0x25d7979acdb5be2a86444a9b80ffbab88a14f1d4b0a41b1893139dbdf9e6e119",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://e7a7c621639f072a1e75a88a9ec822ee7979e60d5dee34ce4dc8b24f9b467e92",
-				"dweb:/ipfs/QmbKmrHitsR4vvcTdtRTS2duZ2vhaYVna2QgoN5ZY4ApK8"
+				"bzz-raw://3066217e220fca9e32bf41d8f02775c0407925a3f2cf3f43540cfbb1c0faea76",
+				"dweb:/ipfs/QmSKL9sjPTTQxfDwgJtLpCDtwku4aqj4BBYTaNtUMaQkDL"
 			]
 		}
 	},

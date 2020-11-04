@@ -1,15 +1,19 @@
 {
 	"compiler": {
-		"version": "0.6.6+commit.6c089d02"
+		"version": "0.6.12+commit.27d51765"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [],
 		"devdoc": {
-			"methods": {}
+			"kind": "dev",
+			"methods": {},
+			"version": 1
 		},
 		"userdoc": {
-			"methods": {}
+			"kind": "user",
+			"methods": {},
+			"version": 1
 		}
 	},
 	"settings": {
@@ -29,10 +33,11 @@
 	},
 	"sources": {
 		"localhost/Fire-Stake/contracts/libraries/Address.sol": {
-			"keccak256": "0xa537c83e71601931f5c02dd6bf576d1609fc6de529061213b80ed72a5f6aa0ac",
+			"keccak256": "0xeb9dcf8ab1e3d5bbbbab18b1b201f10425716574b2116d257770e088785c770f",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://00e0aabf47fc05859450f96e6b8d390e2538560c1495d8ebfc9f93927af7260f",
-				"dweb:/ipfs/QmR2AZPaiJyZvEHcAzxsVKxVeyHyFdprFXiHFJnHkSnmUT"
+				"bzz-raw://1711fd4519ab29648a595ff6e2cb371e614bb65e9c0c9f48c9f579a8ae52c8f6",
+				"dweb:/ipfs/QmVmdZEkdg9DPRt93PzQQhaeUBMRdFiQdM3ZRCphic6S3Y"
 			]
 		}
 	},

@@ -1,15 +1,19 @@
 {
 	"compiler": {
-		"version": "0.6.6+commit.6c089d02"
+		"version": "0.6.12+commit.27d51765"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [],
 		"devdoc": {
-			"methods": {}
+			"kind": "dev",
+			"methods": {},
+			"version": 1
 		},
 		"userdoc": {
-			"methods": {}
+			"kind": "user",
+			"methods": {},
+			"version": 1
 		}
 	},
 	"settings": {
@@ -29,10 +33,11 @@
 	},
 	"sources": {
 		"localhost/Fire-Stake/contracts/libraries/EnumerableSet.sol": {
-			"keccak256": "0x0fb20d17695392fdd0951f65e80ea4ee5b9a7f0f2e3a6c383f0e95f467db36c5",
+			"keccak256": "0x3a1c0815e25eb5be0a7a168e252ff6e83541f24775b2f2637c61fd5bc85c3268",
+			"license": "MIT",
 			"urls": [
-				"bzz-raw://b3b1ac0640658c90b6a485d0331031795509556ab6582356eea23444d2d537e2",
-				"dweb:/ipfs/QmYQtkw6USM638DjLAsya2PzVr8nijP82VtArRJKY9mhL2"
+				"bzz-raw://2e1b4930c35884e39496629e55774919d3209fcd27e920032102d39dd691c813",
+				"dweb:/ipfs/Qmevg8h6DpYbrVicbc2xW6gq73VXd5W7qoMWDGwD6e4Chp"
 			]
 		}
 	},
