@@ -1,0 +1,60 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"görli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"linkReferences": {},
+			"object": "6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea264697066735822122055595fff024184475f4beeb9d206f71a489af7e868bbb5b573b7d6efe018985c64736f6c63430006060033",
+			"opcodes": "PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH1 0xF JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x3F DUP1 PUSH1 0x1D PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN INVALID PUSH1 0x80 PUSH1 0x40 MSTORE PUSH1 0x0 DUP1 REVERT INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 SSTORE MSIZE 0x5F SELFDESTRUCT MUL COINBASE DUP5 SELFBALANCE 0x5F 0x4B 0xEE 0xB9 0xD2 MOD 0xF7 BYTE 0x48 SWAP11 0xF7 0xE8 PUSH9 0xBBB5B573B7D6EFE018 SWAP9 0x5C PUSH5 0x736F6C6343 STOP MOD MOD STOP CALLER ",
+			"sourceMap": "210:605:0:-:0;;;;5:9:-1;2:2;;;27:1;24;17:12;2:2;210:605:0;;;;;;;"
+		},
+		"deployedBytecode": {
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "6080604052600080fdfea264697066735822122055595fff024184475f4beeb9d206f71a489af7e868bbb5b573b7d6efe018985c64736f6c63430006060033",
+			"opcodes": "PUSH1 0x80 PUSH1 0x40 MSTORE PUSH1 0x0 DUP1 REVERT INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 SSTORE MSIZE 0x5F SELFDESTRUCT MUL COINBASE DUP5 SELFBALANCE 0x5F 0x4B 0xEE 0xB9 0xD2 MOD 0xF7 BYTE 0x48 SWAP11 0xF7 0xE8 PUSH9 0xBBB5B573B7D6EFE018 SWAP9 0x5C PUSH5 0x736F6C6343 STOP MOD MOD STOP CALLER ",
+			"sourceMap": "210:605:0:-:0;;;12:1:-1;9;2:12"
+		},
+		"gasEstimates": {
+			"creation": {
+				"codeDepositCost": "12600",
+				"executionCost": "66",
+				"totalCost": "12666"
+			},
+			"internal": {
+				"_msgData()": "infinite",
+				"_msgSender()": "infinite"
+			}
+		},
+		"methodIdentifiers": {}
+	},
+	"abi": []
+}

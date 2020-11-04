@@ -37,6 +37,7 @@
 			"sourceMap": ""
 		},
 		"deployedBytecode": {
+			"immutableReferences": {},
 			"linkReferences": {},
 			"object": "",
 			"opcodes": "",
@@ -47,10 +48,8 @@
 			"allowance(address,address)": "dd62ed3e",
 			"approve(address,uint256)": "095ea7b3",
 			"balanceOf(address)": "70a08231",
-			"burn(uint256)": "42966c68",
-			"burnFrom(address,uint256)": "79cc6790",
-			"changeNodeReward(uint256)": "5e72af18",
-			"changeRequiredTokens(uint256)": "c80d9f31",
+			"circulatingSupply()": "9358928b",
+			"totalSupply()": "18160ddd",
 			"transfer(address,uint256)": "a9059cbb",
 			"transferFrom(address,address,uint256)": "23b872dd"
 		}
@@ -174,72 +173,29 @@
 			"type": "function"
 		},
 		{
-			"inputs": [
-				{
-					"internalType": "uint256",
-					"name": "_value",
-					"type": "uint256"
-				}
-			],
-			"name": "burn",
+			"inputs": [],
+			"name": "circulatingSupply",
 			"outputs": [
 				{
-					"internalType": "bool",
-					"name": "success",
-					"type": "bool"
-				}
-			],
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
-					"internalType": "address",
-					"name": "_from",
-					"type": "address"
-				},
-				{
 					"internalType": "uint256",
-					"name": "_value",
+					"name": "",
 					"type": "uint256"
 				}
 			],
-			"name": "burnFrom",
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [],
+			"name": "totalSupply",
 			"outputs": [
 				{
-					"internalType": "bool",
-					"name": "success",
-					"type": "bool"
-				}
-			],
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
 					"internalType": "uint256",
-					"name": "_value",
+					"name": "",
 					"type": "uint256"
 				}
 			],
-			"name": "changeNodeReward",
-			"outputs": [],
-			"stateMutability": "nonpayable",
-			"type": "function"
-		},
-		{
-			"inputs": [
-				{
-					"internalType": "uint256",
-					"name": "_value",
-					"type": "uint256"
-				}
-			],
-			"name": "changeRequiredTokens",
-			"outputs": [],
-			"stateMutability": "nonpayable",
+			"stateMutability": "view",
 			"type": "function"
 		},
 		{

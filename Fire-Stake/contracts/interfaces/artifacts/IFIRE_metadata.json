@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.6.0+commit.26b70077"
+		"version": "0.6.6+commit.6c089d02"
 	},
 	"language": "Solidity",
 	"output": {
@@ -123,72 +123,29 @@
 				"type": "function"
 			},
 			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "_value",
-						"type": "uint256"
-					}
-				],
-				"name": "burn",
+				"inputs": [],
+				"name": "circulatingSupply",
 				"outputs": [
 					{
-						"internalType": "bool",
-						"name": "success",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "_from",
-						"type": "address"
-					},
-					{
 						"internalType": "uint256",
-						"name": "_value",
+						"name": "",
 						"type": "uint256"
 					}
 				],
-				"name": "burnFrom",
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalSupply",
 				"outputs": [
 					{
-						"internalType": "bool",
-						"name": "success",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
 						"internalType": "uint256",
-						"name": "_value",
+						"name": "",
 						"type": "uint256"
 					}
 				],
-				"name": "changeNodeReward",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "_value",
-						"type": "uint256"
-					}
-				],
-				"name": "changeRequiredTokens",
-				"outputs": [],
-				"stateMutability": "nonpayable",
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -254,7 +211,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/Fire-Stake/contracts/FIRE/FIRE.sol": "IERC20"
+			"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": "IFIRE"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -268,11 +225,11 @@
 		"remappings": []
 	},
 	"sources": {
-		"localhost/Fire-Stake/contracts/FIRE/FIRE.sol": {
-			"keccak256": "0xffc3d143e139d4e5e70b442634ff2ae71122082f8322a51212278659970061df",
+		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
+			"keccak256": "0xc29ac491acf303b913e6bf9e7aa1d79cbd9029527e795694af47b16df6e05e36",
 			"urls": [
-				"bzz-raw://49c016b3008f936c253f7d3535ff8558b8dabf8c4b61f0fa1b17972b0af80c57",
-				"dweb:/ipfs/QmX74KkUu8iQsx3YUdzuLisLB15GQ49hL1C8nAkU9mz1F5"
+				"bzz-raw://c05122693d5f0b0c7ba0039ff29df743e5e689b2880bc33e01e3ee36711103d0",
+				"dweb:/ipfs/QmcWSeZpjpbtbg3JDvLTWo4pzg8eR4uHDyk6rBSxufu3ec"
 			]
 		}
 	},

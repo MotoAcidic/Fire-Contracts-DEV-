@@ -1,0 +1,68 @@
+{
+	"compiler": {
+		"version": "0.6.6+commit.6c089d02"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"methods": {}
+		},
+		"userdoc": {
+			"methods": {}
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"localhost/Fire-Stake/contracts/FIRE.sol": "SwapParams"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"localhost/Fire-Stake/contracts/FIRE.sol": {
+			"keccak256": "0xcfc723b9bb84dbbec53df402863266ec9cb281fe0ef8c07b05d8917305ea0fde",
+			"urls": [
+				"bzz-raw://48d54cf96aeecf8dfd6819ea505dd62a83b873d273c1f5ac7b4b7a43d014a6b4",
+				"dweb:/ipfs/QmcTatuJ1iFikK14PeKnp7d6mLYeY98mM11Hz2tZvGJmLM"
+			]
+		},
+		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
+			"keccak256": "0xc29ac491acf303b913e6bf9e7aa1d79cbd9029527e795694af47b16df6e05e36",
+			"urls": [
+				"bzz-raw://c05122693d5f0b0c7ba0039ff29df743e5e689b2880bc33e01e3ee36711103d0",
+				"dweb:/ipfs/QmcWSeZpjpbtbg3JDvLTWo4pzg8eR4uHDyk6rBSxufu3ec"
+			]
+		},
+		"localhost/Fire-Stake/contracts/libraries/Address.sol": {
+			"keccak256": "0xa537c83e71601931f5c02dd6bf576d1609fc6de529061213b80ed72a5f6aa0ac",
+			"urls": [
+				"bzz-raw://00e0aabf47fc05859450f96e6b8d390e2538560c1495d8ebfc9f93927af7260f",
+				"dweb:/ipfs/QmR2AZPaiJyZvEHcAzxsVKxVeyHyFdprFXiHFJnHkSnmUT"
+			]
+		},
+		"localhost/Fire-Stake/contracts/libraries/EnumerableSet.sol": {
+			"keccak256": "0x0fb20d17695392fdd0951f65e80ea4ee5b9a7f0f2e3a6c383f0e95f467db36c5",
+			"urls": [
+				"bzz-raw://b3b1ac0640658c90b6a485d0331031795509556ab6582356eea23444d2d537e2",
+				"dweb:/ipfs/QmYQtkw6USM638DjLAsya2PzVr8nijP82VtArRJKY9mhL2"
+			]
+		},
+		"localhost/Fire-Stake/contracts/libraries/SafeMath.sol": {
+			"keccak256": "0xbe6923c9a5c2cb0e18a9ac125a91042c94448fbde7b59d48ce3ce6f085415fc5",
+			"urls": [
+				"bzz-raw://e7a7c621639f072a1e75a88a9ec822ee7979e60d5dee34ce4dc8b24f9b467e92",
+				"dweb:/ipfs/QmbKmrHitsR4vvcTdtRTS2duZ2vhaYVna2QgoN5ZY4ApK8"
+			]
+		}
+	},
+	"version": 1
+}

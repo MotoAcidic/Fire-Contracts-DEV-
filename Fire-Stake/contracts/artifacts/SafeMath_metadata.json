@@ -1,0 +1,47 @@
+{
+	"compiler": {
+		"version": "0.6.6+commit.6c089d02"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"methods": {}
+		},
+		"userdoc": {
+			"methods": {}
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"localhost/Fire-Stake/contracts/FIRE.sol": "SafeMath"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"localhost/Fire-Stake/contracts/FIRE.sol": {
+			"keccak256": "0x9e2c07f60cb2344e483752894df9027f25d28d8732eaa1d3ec16d9de4a5b45fe",
+			"urls": [
+				"bzz-raw://69d0ddd430f9d941688edb5b9bc591d774d80af0fb3bcf592d5889542ab7093c",
+				"dweb:/ipfs/QmWFRXSMwpBg3CXgTRRN432SjjneYEVYDBjTF29psB4hwG"
+			]
+		},
+		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
+			"keccak256": "0xc29ac491acf303b913e6bf9e7aa1d79cbd9029527e795694af47b16df6e05e36",
+			"urls": [
+				"bzz-raw://c05122693d5f0b0c7ba0039ff29df743e5e689b2880bc33e01e3ee36711103d0",
+				"dweb:/ipfs/QmcWSeZpjpbtbg3JDvLTWo4pzg8eR4uHDyk6rBSxufu3ec"
+			]
+		}
+	},
+	"version": 1
+}

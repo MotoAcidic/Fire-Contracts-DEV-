@@ -1,0 +1,40 @@
+{
+	"compiler": {
+		"version": "0.6.6+commit.6c089d02"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"methods": {}
+		},
+		"userdoc": {
+			"methods": {}
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"localhost/Fire-Stake/contracts/libraries/Address.sol": "Address"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"localhost/Fire-Stake/contracts/libraries/Address.sol": {
+			"keccak256": "0xa537c83e71601931f5c02dd6bf576d1609fc6de529061213b80ed72a5f6aa0ac",
+			"urls": [
+				"bzz-raw://00e0aabf47fc05859450f96e6b8d390e2538560c1495d8ebfc9f93927af7260f",
+				"dweb:/ipfs/QmR2AZPaiJyZvEHcAzxsVKxVeyHyFdprFXiHFJnHkSnmUT"
+			]
+		}
+	},
+	"version": 1
+}
