@@ -3,200 +3,12 @@
 pragma solidity ^0.6.0;
 
 import "./interfaces/IFIRE.sol";
-import "./libraries/SafeMath.sol";
-import "./libraries/Address.sol";
-import "./libraries/EnumerableSet.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol";
 
-contract Context {
-    // Empty internal constructor, to prevent people from mistakenly deploying
-    // an instance of this contract, which should be used via inheritance.
-    //constructor () internal { }
-    // solhint-disable-previous-line no-empty-blocks
 
-    function _msgSender() internal view returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-abstract contract AccessControl is Context {
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using Address for address;
-
-    struct RoleData {
-        EnumerableSet.AddressSet members;
-        bytes32 adminRole;
-    }
-
-    mapping (bytes32 => RoleData) private _roles;
-
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-
-    /**
-     * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`
-     *
-     * `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite
-     * {RoleAdminChanged} not being emitted signaling this.
-     *
-     * _Available since v3.1._
-     */
-    event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole);
-
-    /**
-     * @dev Emitted when `account` is granted `role`.
-     *
-     * `sender` is the account that originated the contract call, an admin role
-     * bearer except when using {_setupRole}.
-     */
-    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
-
-    /**
-     * @dev Emitted when `account` is revoked `role`.
-     *
-     * `sender` is the account that originated the contract call:
-     *   - if using `revokeRole`, it is the admin role bearer
-     *   - if using `renounceRole`, it is the role bearer (i.e. `account`)
-     */
-    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
-
-    /**
-     * @dev Returns `true` if `account` has been granted `role`.
-     */
-    function hasRole(bytes32 role, address account) public view returns (bool) {
-        return _roles[role].members.contains(account);
-    }
-
-    /**
-     * @dev Returns the number of accounts that have `role`. Can be used
-     * together with {getRoleMember} to enumerate all bearers of a role.
-     */
-    function getRoleMemberCount(bytes32 role) public view returns (uint256) {
-        return _roles[role].members.length();
-    }
-
-    /**
-     * @dev Returns one of the accounts that have `role`. `index` must be a
-     * value between 0 and {getRoleMemberCount}, non-inclusive.
-     *
-     * Role bearers are not sorted in any particular way, and their ordering may
-     * change at any point.
-     *
-     * WARNING: When using {getRoleMember} and {getRoleMemberCount}, make sure
-     * you perform all queries on the same block. See the following
-     * https://forum.openzeppelin.com/t/iterating-over-elements-on-enumerableset-in-openzeppelin-contracts/2296[forum post]
-     * for more information.
-     */
-    function getRoleMember(bytes32 role, uint256 index) public view returns (address) {
-        return _roles[role].members.at(index);
-    }
-
-    /**
-     * @dev Returns the admin role that controls `role`. See {grantRole} and
-     * {revokeRole}.
-     *
-     * To change a role's admin, use {_setRoleAdmin}.
-     */
-    function getRoleAdmin(bytes32 role) public view returns (bytes32) {
-        return _roles[role].adminRole;
-    }
-
-    /**
-     * @dev Grants `role` to `account`.
-     *
-     * If `account` had not been already granted `role`, emits a {RoleGranted}
-     * event.
-     *
-     * Requirements:
-     *
-     * - the caller must have ``role``'s admin role.
-     */
-    function grantRole(bytes32 role, address account) public virtual {
-        require(hasRole(_roles[role].adminRole, _msgSender()), "AccessControl: sender must be an admin to grant");
-
-        _grantRole(role, account);
-    }
-
-    /**
-     * @dev Revokes `role` from `account`.
-     *
-     * If `account` had been granted `role`, emits a {RoleRevoked} event.
-     *
-     * Requirements:
-     *
-     * - the caller must have ``role``'s admin role.
-     */
-    function revokeRole(bytes32 role, address account) public virtual {
-        require(hasRole(_roles[role].adminRole, _msgSender()), "AccessControl: sender must be an admin to revoke");
-
-        _revokeRole(role, account);
-    }
-
-    /**
-     * @dev Revokes `role` from the calling account.
-     *
-     * Roles are often managed via {grantRole} and {revokeRole}: this function's
-     * purpose is to provide a mechanism for accounts to lose their privileges
-     * if they are compromised (such as when a trusted device is misplaced).
-     *
-     * If the calling account had been granted `role`, emits a {RoleRevoked}
-     * event.
-     *
-     * Requirements:
-     *
-     * - the caller must be `account`.
-     */
-    function renounceRole(bytes32 role, address account) public virtual {
-        require(account == _msgSender(), "AccessControl: can only renounce roles for self");
-
-        _revokeRole(role, account);
-    }
-
-    /**
-     * @dev Grants `role` to `account`.
-     *
-     * If `account` had not been already granted `role`, emits a {RoleGranted}
-     * event. Note that unlike {grantRole}, this function doesn't perform any
-     * checks on the calling account.
-     *
-     * [WARNING]
-     * ====
-     * This function should only be called from the constructor when setting
-     * up the initial roles for the system.
-     *
-     * Using this function in any other way is effectively circumventing the admin
-     * system imposed by {AccessControl}.
-     * ====
-     */
-    function _setupRole(bytes32 role, address account) internal virtual {
-        _grantRole(role, account);
-    }
-
-    /**
-     * @dev Sets `adminRole` as ``role``'s admin role.
-     *
-     * Emits a {RoleAdminChanged} event.
-     */
-    function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {
-        emit RoleAdminChanged(role, _roles[role].adminRole, adminRole);
-        _roles[role].adminRole = adminRole;
-    }
-
-    function _grantRole(bytes32 role, address account) private {
-        if (_roles[role].members.add(account)) {
-            emit RoleGranted(role, account, _msgSender());
-        }
-    }
-
-    function _revokeRole(bytes32 role, address account) private {
-        if (_roles[role].members.remove(account)) {
-            emit RoleRevoked(role, account, _msgSender());
-        }
-    }
-}
 
 abstract contract DEX {
     
@@ -257,28 +69,27 @@ contract SwapParams {
 contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     using SafeMath for uint256;
 
-    string public constant name = "Fire Network";
-    string public constant symbol = "FIRE";
-    uint8 public constant decimals = 18;
+    string internal constant name = "Fire Network";
+    string internal constant symbol = "FIRE";
+    uint8 internal constant decimals = 18;
     uint256  _totalSupply = 21000000e18; //21m
     uint256  _circulatingSupply = 0; //Set to 0 at start
 
     address _owner;
     address[] internal stakeholders;
-    address public contractOwner = msg.sender;
+    address internal contractOwner = msg.sender;
     
     uint256 private constant WEEKS = 50;
     uint256 internal constant DAYS = WEEKS * 7;
     uint256 private constant START_DAY = 1;
     uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
-    uint blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
+    uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Sent(address from, address to, uint amount);
     
     mapping(address => uint256) _balances;
-    //mapping(address => uint256) _role;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
     mapping(address => uint256) internal stakes;
@@ -314,9 +125,7 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-    bytes32 public constant ABET_SWAP_ROLE = keccak256("ABET_SWAP_ROLE");
-    bytes32 public constant BECN_SWAP_ROLE = keccak256("BECN_SWAP_ROLE");
-    bytes32 public constant XAP_SWAP_ROLE = keccak256("XAP_SWAP_ROLE");
+
     
     function grantMinerRole(address account) public{
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
@@ -326,30 +135,9 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant burner role.");
         grantRole(BURNER_ROLE, account);
     }
-    function grantAbetSwapRole(address account) public{
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant swap role.");
-        grantRole(ABET_SWAP_ROLE, account);
-    }
-    function grantBecnSwapRole(address account) public{
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant swap role.");
-        grantRole(BECN_SWAP_ROLE, account);
-    }
-    function grantXAPSwapRole(address account) public{
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant swap role.");
-        grantRole(BECN_SWAP_ROLE, account);
-    }
 
-    // ------------------------------------------------------------------------
-    //                              Send Functions
-    // ------------------------------------------------------------------------
-    function sendAbet(address receiver, uint amount) public {
-        require(hasRole(ABET_SWAP_ROLE, msg.sender), "Need to be a swapper");
-        address swapAddress = ABET_ADDRS;
-        
-        _balances[swapAddress] = SafeMath.sub(_balances[swapAddress], amount);
-        _balances[receiver] = SafeMath.add(_balances[receiver], amount);
-        emit Transfer(swapAddress, receiver, amount);
-    }
+
+
 
     // ------------------------------------------------------------------------
     //                              Premine Functions

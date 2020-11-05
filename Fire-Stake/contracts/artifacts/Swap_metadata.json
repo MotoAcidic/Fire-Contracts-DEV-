@@ -6,11 +6,6 @@
 	"output": {
 		"abi": [
 			{
-				"inputs": [],
-				"stateMutability": "nonpayable",
-				"type": "constructor"
-			},
-			{
 				"anonymous": false,
 				"inputs": [
 					{
@@ -711,6 +706,30 @@
 			{
 				"inputs": [
 					{
+						"internalType": "bytes32",
+						"name": "message",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "recoverSigner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "uint256",
 						"name": "_stake",
 						"type": "uint256"
@@ -823,6 +842,35 @@
 				"name": "sendAbet",
 				"outputs": [],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "bytes",
+						"name": "sig",
+						"type": "bytes"
+					}
+				],
+				"name": "splitSignature",
+				"outputs": [
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "",
+						"type": "bytes32"
+					}
+				],
+				"stateMutability": "pure",
 				"type": "function"
 			},
 			{
@@ -1097,7 +1145,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/Fire-Stake/contracts/FIRE.sol": "FIRE"
+			"localhost/Fire-Stake/contracts/Swap.sol": "Swap"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -1147,10 +1195,17 @@
 			]
 		},
 		"localhost/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0xa9ecac1c34dcd232bb0340fbdd70a6233c6c2eec38aae6b7a336b3f45b64c026",
+			"keccak256": "0xd756a26b191061e3ac150c5f4ae1669edcd27dedaf72245a3084ba75f9bd194a",
 			"urls": [
-				"bzz-raw://5fbf5e140908b956a0830af3f0c7726237126000008f4c0f8ea8a2a87b39014d",
-				"dweb:/ipfs/QmRaH1eKYffcY5wNqHMguhEPFdwCoVCAKmZUEetLvbRvbY"
+				"bzz-raw://b54094a83e8c9847fd6ed9e87ccaea67ec4f941d3c3356bd3204872fa001a425",
+				"dweb:/ipfs/QmdBrg2HkQaNX4Rtr62kSnMH3QaQpAaPRnBvJdiVQydYMs"
+			]
+		},
+		"localhost/Fire-Stake/contracts/Swap.sol": {
+			"keccak256": "0x86df486c46809cc24330a5b3daaa7551846aea4597c17a50344a45cd8102170b",
+			"urls": [
+				"bzz-raw://df8a5deab280687f42fd20e067702b65883c8160e4f1e2386c8f2c4599ca5b38",
+				"dweb:/ipfs/QmbsKo2CfhbneAP4jdGdHhrQzv5y3nhXFPbrwbhNFU9gf5"
 			]
 		},
 		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {

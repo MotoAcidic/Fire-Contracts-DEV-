@@ -1,19 +1,15 @@
 {
 	"compiler": {
-		"version": "0.6.12+commit.27d51765"
+		"version": "0.6.6+commit.6c089d02"
 	},
 	"language": "Solidity",
 	"output": {
 		"abi": [],
 		"devdoc": {
-			"kind": "dev",
-			"methods": {},
-			"version": 1
+			"methods": {}
 		},
 		"userdoc": {
-			"kind": "user",
-			"methods": {},
-			"version": 1
+			"methods": {}
 		}
 	},
 	"settings": {
@@ -32,44 +28,53 @@
 		"remappings": []
 	},
 	"sources": {
-		"localhost/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x7aaab6bc3698a688e2072945faf357f293991fbaba533315ee19096dec198f40",
-			"license": "MIT",
+		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/GSN/Context.sol": {
+			"keccak256": "0xdb26cbf4d028490f49831a7865c2fe1b28db44b535ca8d343785a3b768aae183",
 			"urls": [
-				"bzz-raw://4867f92bc6457167bc40050261865d0dcc9a5f0960ece9cdcb2046efc3e84a1f",
-				"dweb:/ipfs/QmTMqhA6Rf7pCLDErpJA2NaRztKBi9zztz1aCHx3vNsE5Q"
+				"bzz-raw://840b14ce0315c47d49ba328f1f9fa7654ded1c9e1559e6c5e777a7b2dc28bf0a",
+				"dweb:/ipfs/QmTLLabn4wcfGro9LEmUXUN2nwKqZSotXMvjDCLXEnLtZP"
+			]
+		},
+		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol": {
+			"keccak256": "0x92f7900d382761c7faefeaced81c6b4f1aae909ed0551803bfe8f27101956360",
+			"urls": [
+				"bzz-raw://407c0864143968542e5cf5aa7556916d2cf292b201e3dadb65662e9a3aa24187",
+				"dweb:/ipfs/QmSnXzYAUaGLGr7uofRbgQraTJvatbjQLBPhyYiMd18oUJ"
+			]
+		},
+		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol": {
+			"keccak256": "0x9a9cf02622cd7a64261b10534fc3260449da25c98c9e96d1b4ae8110a20e5806",
+			"urls": [
+				"bzz-raw://2df142592d1dc267d9549049ee3317fa190d2f87eaa565f86ab05ec83f7ab8f5",
+				"dweb:/ipfs/QmSkJtcfWo7c42KnL5hho6GFxK6HRNV91XABx1P7xDtfLV"
+			]
+		},
+		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol": {
+			"keccak256": "0x1845481964ebacf35afe1a006fa574793b52e698eba0a8db6e3d30202bc45429",
+			"urls": [
+				"bzz-raw://40da60a9727380e21c3527060691b2179bc7afc1e2e10ee41cd81e58a75f58e3",
+				"dweb:/ipfs/Qmc1mhjoT9LShTuUWFHaLfjj43qim2Fq7shMstU5bjkxcm"
+			]
+		},
+		"https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol": {
+			"keccak256": "0x30912f281b544bc2a75f687df825521f11567048b5e704dd68414a1335635b88",
+			"urls": [
+				"bzz-raw://85efaa3fd24df1eb6ee01bc76b22fc26ed80c8fe163f99faa14b761b13892d06",
+				"dweb:/ipfs/QmcHiHVz3u9xCKLEAsgUbUnisDcrhT1zHDyWXtBBU7VW5t"
+			]
+		},
+		"localhost/Fire-Stake/contracts/FIRE.sol": {
+			"keccak256": "0xa9ecac1c34dcd232bb0340fbdd70a6233c6c2eec38aae6b7a336b3f45b64c026",
+			"urls": [
+				"bzz-raw://5fbf5e140908b956a0830af3f0c7726237126000008f4c0f8ea8a2a87b39014d",
+				"dweb:/ipfs/QmRaH1eKYffcY5wNqHMguhEPFdwCoVCAKmZUEetLvbRvbY"
 			]
 		},
 		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
 			"keccak256": "0x2b2af70c3da6ebd4a1c0efac03a0ce7ca953162a66153240d66067a61f1aca40",
-			"license": "MIT",
 			"urls": [
 				"bzz-raw://769694aed703fc4715bf2b9046b4681c84db40df0246c0b49e80f647155f63a9",
 				"dweb:/ipfs/QmUzfmbLPwpdmYMyRZnE4EYCHTdZYh4CWyUDVtFvGuJmfb"
-			]
-		},
-		"localhost/Fire-Stake/contracts/libraries/Address.sol": {
-			"keccak256": "0xeb9dcf8ab1e3d5bbbbab18b1b201f10425716574b2116d257770e088785c770f",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://1711fd4519ab29648a595ff6e2cb371e614bb65e9c0c9f48c9f579a8ae52c8f6",
-				"dweb:/ipfs/QmVmdZEkdg9DPRt93PzQQhaeUBMRdFiQdM3ZRCphic6S3Y"
-			]
-		},
-		"localhost/Fire-Stake/contracts/libraries/EnumerableSet.sol": {
-			"keccak256": "0x3a1c0815e25eb5be0a7a168e252ff6e83541f24775b2f2637c61fd5bc85c3268",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://2e1b4930c35884e39496629e55774919d3209fcd27e920032102d39dd691c813",
-				"dweb:/ipfs/Qmevg8h6DpYbrVicbc2xW6gq73VXd5W7qoMWDGwD6e4Chp"
-			]
-		},
-		"localhost/Fire-Stake/contracts/libraries/SafeMath.sol": {
-			"keccak256": "0x25d7979acdb5be2a86444a9b80ffbab88a14f1d4b0a41b1893139dbdf9e6e119",
-			"license": "MIT",
-			"urls": [
-				"bzz-raw://3066217e220fca9e32bf41d8f02775c0407925a3f2cf3f43540cfbb1c0faea76",
-				"dweb:/ipfs/QmSKL9sjPTTQxfDwgJtLpCDtwku4aqj4BBYTaNtUMaQkDL"
 			]
 		}
 	},
