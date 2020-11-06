@@ -55,7 +55,8 @@ contract Swap is AccessControl, FIRE {
        bytes32 s;
 
        (v, r, s) = splitSignature(sig);
-       return ecrecover(message, v, r, s);
+       address signer = ecrecover(message, v, r, s);
+       return signer;
   }
     
     function splitSignature(bytes memory sig)
