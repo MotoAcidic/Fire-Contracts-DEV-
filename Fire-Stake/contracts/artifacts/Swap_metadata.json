@@ -1202,10 +1202,10 @@
 			]
 		},
 		"localhost/Fire-Stake/contracts/Swap.sol": {
-			"keccak256": "0x86df486c46809cc24330a5b3daaa7551846aea4597c17a50344a45cd8102170b",
+			"keccak256": "0x3e36898e541ef2bc99327181fdf412f63e9ce9a15bdd33cc8a332319a6b97ee0",
 			"urls": [
-				"bzz-raw://df8a5deab280687f42fd20e067702b65883c8160e4f1e2386c8f2c4599ca5b38",
-				"dweb:/ipfs/QmbsKo2CfhbneAP4jdGdHhrQzv5y3nhXFPbrwbhNFU9gf5"
+				"bzz-raw://499591293b40a86789df2cbb7a3d037fafceb2c867eff7f91adab477059b66c2",
+				"dweb:/ipfs/QmWcSLEQbruDxRJvNkZWXgQ7yiyQfM7FgQEBLwbWpaPpu6"
 			]
 		},
 		"localhost/Fire-Stake/contracts/interfaces/IFIRE.sol": {
