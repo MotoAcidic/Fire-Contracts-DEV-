@@ -86,13 +86,11 @@ contract Auction is IAuction, AccessControl {
         address _staking,
         address payable _uniswap,
         address payable _recipient,
-        address _nativeSwap,
         address _foreignSwap,
         address _subbalances
     ) external {
         require(!init_, "init is active");
         _setupRole(MANAGER_ROLE, _manager);
-        _setupRole(CALLER_ROLE, _nativeSwap);
         _setupRole(CALLER_ROLE, _foreignSwap);
         _setupRole(CALLER_ROLE, _staking);
         _setupRole(CALLER_ROLE, _subbalances);
