@@ -29,7 +29,6 @@ contract(
     let swaptoken;
     let foreignswap;
     let token;
-    let nativeswap;
     let dailyauction;
     let uniswap;
     let subBalances;
@@ -45,7 +44,6 @@ contract(
       swaptoken = contracts.swaptoken;
       foreignswap = contracts.foreignswap;
       token = contracts.token;
-      nativeswap = contracts.nativeswap;
       dailyauction = contracts.auction;
       uniswap = contracts.uniswap;
       subBalances = contracts.subbalances;

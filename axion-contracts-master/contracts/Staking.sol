@@ -91,7 +91,7 @@ contract Staking is IStaking, AccessControl {
         address _foreignSwap,
         uint256 _stepTimestamp
     ) external {
-        require(!init_, "NativeSwap: init is active");
+        require(!init_, "FireSwap: init is active");
         _setupRole(EXTERNAL_STAKER_ROLE, _foreignSwap);
         _setupRole(EXTERNAL_STAKER_ROLE, _auction);
         mainToken = _mainToken;
@@ -236,7 +236,7 @@ contract Staking is IStaking, AccessControl {
 
         require(
             sessionDataOf[msg.sender][sessionId].shares > 0,
-            "NativeSwap: Shares balance is empty"
+            "FireSwap: Shares balance is empty"
         );
 
         uint256 shares = sessionDataOf[msg.sender][sessionId].shares;

@@ -43,7 +43,6 @@ contract(
     bank,
     setter,
     signer,
-    nativeSwap,
     subBalances,
     account1,
     account2
@@ -68,15 +67,6 @@ contract(
         [signAmount.toString(), account1]
       );
 
-      swaptoken = await TERC20.new(
-	"2T Token",
-	"2T",
-	web3.utils.toWei("1000"), 
-	bank, 
-	{from: bank}
-      );
-      token = await Token.new("2X Token", "2X", swaptoken.address, setter, setter);
-
       auction = await AuctionMock.new();
       staking = await StakingMock.new();
       bpd = await BPDMock.new();
@@ -87,7 +77,6 @@ contract(
       // Init token
       token.init(
         [
-          nativeSwap,
           foreignswap.address,
           auction.address,
           staking.address,

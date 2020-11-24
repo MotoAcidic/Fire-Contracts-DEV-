@@ -1,7 +1,6 @@
 require('dotenv').config({ path: '../.env' })
 
 const Auction = artifacts.require('./Auction.sol');
-const NativeSwap = artifacts.require('./NativeSwap.sol');
 const Staking = artifacts.require('./Staking.sol');
 const ForeignSwap = artifacts.require('./ForeignSwap.sol');
 const BPD = artifacts.require('./BPD.sol');
@@ -51,9 +50,6 @@ module.exports = async function (deployer, network, accounts) {
                     SETTER_ADDRESS
                 )
 
-                // DEPLOY NATIVE SWAP
-                const nativeSwap = await deployer.deploy(NativeSwap)
-
                 // DEPLOY AUCTION
                 const auction = await deployer.deploy(Auction)
 
@@ -72,7 +68,6 @@ module.exports = async function (deployer, network, accounts) {
                 console.log('')
                 console.log('Deployment completed.')
                 console.log('Token address:', token.address);
-                console.log('NativeSwap address:', nativeSwap.address);
                 console.log('Auction address:', auction.address);
                 console.log('Staking address:', staking.address);
                 console.log('Foreign Swap address: ', foreignSwap.address);
@@ -84,7 +79,6 @@ module.exports = async function (deployer, network, accounts) {
                 console.log('Code to paste in .env file for init:')
                 console.log('-------')
                 console.log('TOKEN_ADDRESS='+ token.address)
-                console.log('NATIVE_SWAP_ADDRESS=' + nativeSwap.address);
                 console.log('AUCTION_ADDRESS=' + auction.address);
                 console.log('STAKING_ADDRESS=' + staking.address);
                 console.log('FOREIGN_SWAP_ADDRESS=' + foreignSwap.address);

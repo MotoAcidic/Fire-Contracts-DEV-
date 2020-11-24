@@ -4,7 +4,6 @@ chai.use(require("chai-bn")(BN));
 
 const TERC20 = artifacts.require("TERC20");
 const Token = artifacts.require("Token");
-const NativeSwap = artifacts.require("NativeSwap");
 const Auction = artifacts.require("Auction");
 const SubBalances = artifacts.require("SubBalances");
 const StakingMock = artifacts.require("StakingMock");
@@ -25,7 +24,6 @@ const TOTAL_SNAPSHOT_AMOUNT = new BN(10 ** 10);
 const TOTAL_SNAPSHOT_ADDRESS = new BN(10);
 
 async function initTestSmartContracts(setter, recipient, stakingAddress) {
-  const nativeswap = await NativeSwap.new();
 
   const bpd = await BPD.new(setter);
 
@@ -42,7 +40,6 @@ async function initTestSmartContracts(setter, recipient, stakingAddress) {
     "2X Token",
     "2X",
     swaptoken.address,
-    nativeswap.address,
     setter
   );
 
@@ -57,20 +54,12 @@ async function initTestSmartContracts(setter, recipient, stakingAddress) {
   const usedStakingAddress = stakingAddress ? stakingAddress : staking.address;
 
   await token.init([
-    nativeswap.address,
     foreignswap.address,
     usedStakingAddress,
     auction.address,
     subbalances.address,
   ]);
 
-  await nativeswap.init(
-    new BN(STAKE_PERIOD.toString(), 10),
-    new BN(DAY.toString(), 10),
-    swaptoken.address,
-    token.address,
-    auction.address
-  );
 
   await bpd.init(token.address, foreignswap.address, subbalances.address);
 
@@ -95,7 +84,6 @@ async function initTestSmartContracts(setter, recipient, stakingAddress) {
     usedStakingAddress,
     uniswap.address,
     recipient,
-    nativeswap.address,
     foreignswap.address,
     subbalances.address
   );
@@ -112,7 +100,6 @@ async function initTestSmartContracts(setter, recipient, stakingAddress) {
   );
 
   return {
-    nativeswap,
     bpd,
     swaptoken,
     foreignswap,

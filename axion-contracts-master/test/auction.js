@@ -47,7 +47,6 @@ contract(
     let swaptoken;
     let foreignswap;
     let token;
-    let nativeswap;
     let dailyauction;
     let uniswap;
     let subBalances;
@@ -59,7 +58,6 @@ contract(
       swaptoken = contracts.swaptoken;
       foreignswap = contracts.foreignswap;
       token = contracts.token;
-      nativeswap = contracts.nativeswap;
       dailyauction = contracts.auction;
       uniswap = contracts.uniswap;
       subBalances = contracts.subbalances;
@@ -195,19 +193,9 @@ contract(
 
       describe("successful cases", () => {
         beforeEach(async () => {
-          // setter swap swapToken to mainToken - to generate penalty
-          await swaptoken.approve(
-            nativeswap.address,
-            web3.utils.toWei("10000000000"),
-            { from: setter }
-          );
-          await nativeswap.deposit(web3.utils.toWei("100000"), {
-            from: setter,
-          });
 
           // Advance the date to day 175 after launch - so there is a penalty 50%
           await helper.advanceTimeAndBlock(DAY * 175);
-          await nativeswap.swapNativeToken({ from: setter });
           // Advance to day 176, we will bet on this day
           await helper.advanceTimeAndBlock(DAY);
 

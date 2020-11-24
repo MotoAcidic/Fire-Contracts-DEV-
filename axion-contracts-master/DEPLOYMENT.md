@@ -29,7 +29,6 @@ Next sections will contain list of required parameters for each stage.
 * `TOKEN_NAME` - Name of token for deploy
 * `TOKEN_SYMBOL` - Short symbol of token for deploy
 * `SWAPPER_ADDRESS` - Address of account, which will do first swap of tokens (after deployment but before initialization)
-* `HEX2T_ADDRESS` - Address of token, which will be used on first 1:1 swap of tokens (before initialization)
 
 #### Initialization parameters 
 These parameters can be supplied after successful deployment, but needed for correct initialization of contracts.
@@ -38,7 +37,6 @@ These parameters can be supplied after successful deployment, but needed for cor
 These values also will be provided on screen after successful run of deployment command.
 
 * `TOKEN_ADDRESS` - Address of deployed `Token.sol`
-* `NATIVE_SWAP_ADDRESS` - Address of deployed `NativeSwap.sol`
 * `AUCTION_ADDRESS` - Address of deployed `Auction.sol`
 * `STAKING_ADDRESS` - Address of deployed `Staking.sol`
 * `FOREIGN_SWAP_ADDRESS` - Address of deployed `ForeignSwap.sol`
@@ -74,7 +72,6 @@ Requirement parameter of `.env` file:
 * `TOKEN_NAME`
 * `TOKEN_SYMBOL`
 * `SWAPPER_ADDRESS` 
-* `HEX2T_ADDRESS`
 
 Steps to deploy:
 1. Create `.env` file
@@ -121,5 +118,5 @@ Steps to initialize:
   * If dependency installation fails, run: `pip install wheel` and try to install them again
 4. Make sure all parameters set in `.env` file
 7. Run script to initalize contracts: `python init_contracts.py all` - this will initialize contracts in sequence
-  * If one of initialization fails, you can run `python init_contracts.py <contract>` to send transaction manually. `<contract>` can be: `all`, `staking`, `auction`, `nativeswap`, `foreignswap`, `bpd`, `subbalances`, `token`
+  * If one of initialization fails, you can run `python init_contracts.py <contract>` to send transaction manually. `<contract>` can be: `all`, `staking`, `auction`, `foreignswap`, `bpd`, `subbalances`, `token`
 

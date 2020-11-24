@@ -11,7 +11,6 @@ contract(
   ([
     setter,
     swapper,
-    nativeSwap,
     foreignSwap,
     auction,
     subbalances,
@@ -94,7 +93,6 @@ contract(
       // Call init only after swap!!!
       token.init(
         [
-          nativeSwap,
           foreignSwap,
           auction,
           subbalances,
@@ -106,7 +104,6 @@ contract(
       );
 
       const MINTER_ROLE = await token.getMinterRole();
-      expect(await token.hasRole(MINTER_ROLE, nativeSwap)).equals(true);
       expect(await token.hasRole(MINTER_ROLE, foreignSwap)).equals(true);
       expect(await token.hasRole(MINTER_ROLE, auction)).equals(true);
       expect(await token.hasRole(MINTER_ROLE, subbalances)).equals(true);

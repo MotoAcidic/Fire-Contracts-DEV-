@@ -51,14 +51,12 @@ class ContractInitializer:
         # Contract addresses
         contracts_addresses = {
             'token': os.getenv('TOKEN_ADDRESS'),
-            'native_swap': os.getenv('NATIVE_SWAP_ADDRESS'),
             'auction': os.getenv('AUCTION_ADDRESS'),
             'staking': os.getenv('STAKING_ADDRESS'),
             'foreign_swap': os.getenv('FOREIGN_SWAP_ADDRESS'),
             'bpd': os.getenv('BPD_ADDRESS'),
             'subbalances': os.getenv('SUBBALANCES_ADDRESS'),
             'uniswap_router': os.getenv('UNISWAP_ADDRESS'),
-            'hex2t_token': os.getenv('HEX2T_ADDRESS')
         }
         self.check_settings(contracts_addresses)
         contracts_env['contracts_addresses'] = contracts_addresses
@@ -100,7 +98,6 @@ class ContractInitializer:
 
     def load_contracts_abi(self):
         token_file = 'Token.json'
-        native_swap_file = 'NativeSwap.json'
         auction_file = 'Auction.json'
         staking_file = 'Staking.json'
         foreign_swap_file = 'ForeignSwap.json'
@@ -109,7 +106,6 @@ class ContractInitializer:
 
         abi_dict = {
             'token': self.load_contract_file(token_file),
-            'native_swap': self.load_contract_file(native_swap_file),
             'auction': self.load_contract_file(auction_file),
             'staking': self.load_contract_file(staking_file),
             'foreign_swap': self.load_contract_file(foreign_swap_file),
@@ -215,7 +211,6 @@ class ContractInitializer:
             self.contracts_env['contracts_addresses']['staking'],
             self.contracts_env['contracts_addresses']['uniswap_router'],
             self.contracts_env['init_params']['eth_recipient'],
-            self.contracts_env['contracts_addresses']['native_swap'],
             self.contracts_env['contracts_addresses']['foreign_swap'],
             self.contracts_env['contracts_addresses']['subbalances'],
         )
@@ -228,33 +223,6 @@ class ContractInitializer:
             tx_hash = self.sign_send_tx(tx)
             print('Transaction hash:', tx_hash.hex(), flush=True)
 
-            return tx_hash
-
-        except Exception as e:
-            print('Transaction failed to send, reason:', e)
-
-    def init_native_swap_contract(self):
-        print('Initializing Native Swap contract', flush=True)
-
-        contract_address = self.contracts_env['contracts_addresses']['native_swap']
-        contract_abi = self.contracts_abi['native_swap']
-        contract = self.load_contract(contract_address, contract_abi)
-
-        
-        tx = contract.functions.init(
-            int(self.contracts_env['init_params']['base_period']),
-            int(self.contracts_env['init_params']['day_seconds']),
-            self.contracts_env['contracts_addresses']['hex2t_token'],
-            self.contracts_env['contracts_addresses']['token'],
-            self.contracts_env['contracts_addresses']['auction'],
-        )
-
-        print('Raw transaction:', flush=True)
-        print(tx.__dict__, flush=True)
-
-        try:
-            tx_hash = self.sign_send_tx(tx)
-            print('Transaction hash:', tx_hash.hex(), flush=True)
             return tx_hash
 
         except Exception as e:
@@ -349,7 +317,6 @@ class ContractInitializer:
         contract = self.load_contract(contract_address, contract_abi)
 
         tx = contract.functions.init([
-            self.contracts_env['contracts_addresses']['native_swap'],
             self.contracts_env['contracts_addresses']['auction'],
             self.contracts_env['contracts_addresses']['staking'],
             self.contracts_env['contracts_addresses']['foreign_swap'],
@@ -377,11 +344,6 @@ def init_auction(initializer_instance):
     if not initializer_instance.check_tx_on_retry(auction_tx):
         sys.exit()
 
-def init_nativeswap(initializer_instance):
-    nativeswap_tx = initializer_instance.init_native_swap_contract()
-    if not initializer_instance.check_tx_on_retry(nativeswap_tx):
-        sys.exit()
-
 def init_foreignswap(initializer_instance):
     foreignswap_tx = initializer_instance.init_foreign_swap_contract()
     if not initializer_instance.check_tx_on_retry(foreignswap_tx):
@@ -407,11 +369,11 @@ def get_initializer():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    helpstring = 'Name of contract. Can be: all, staking, auction, nativeswap, foreignswap, bpd, subbalances, token'
+    helpstring = 'Name of contract. Can be: all, staking, auction, foreignswap, bpd, subbalances, token'
     parser.add_argument("contract", help=helpstring)
     args = parser.parse_args()
 
-    contract_list = ["all", "staking", "auction", "nativeswap", "foreignswap", "bpd", "subbalances", "token"]
+    contract_list = ["all", "staking", "auction", "foreignswap", "bpd", "subbalances", "token"]
     if args.contract is None or args.contract not in contract_list:
         print('Contract(s) not specified or does not allowed', flush=True)
         sys.exit()
@@ -421,7 +383,6 @@ if __name__ == '__main__':
     if args.contract == 'all':
         init_staking(initializer)
         init_auction(initializer)
-        init_nativeswap(initializer)
         init_foreignswap(initializer)
         init_bpd(initializer)
         init_subbalances(initializer)
@@ -430,8 +391,6 @@ if __name__ == '__main__':
         init_staking(initializer)
     elif args.contract == 'auction':
         init_auction(initializer)
-    elif args.contract == 'nativeswap':
-        init_nativeswap(initializer)
     elif args.contract == 'foreignswap':
         init_foreignswap(initializer)
     elif args.contract == 'bpd':
