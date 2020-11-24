@@ -16,6 +16,7 @@ contract BPD is IBPD, AccessControl {
 
     uint256[5] public poolYearAmounts;
     bool[5] public poolTransferred;
+    // Percentages to pay out for each Big Pay Day
     uint256[5] public poolYearPercentages = [10, 15, 20, 25, 30];
 
     address public mainToken;

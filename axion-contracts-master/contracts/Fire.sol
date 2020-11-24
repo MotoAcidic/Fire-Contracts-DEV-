@@ -5,10 +5,25 @@ pragma solidity >=0.4.25 <0.7.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./interfaces/IToken.sol";
+import "./interfaces/IFire.sol";
 
-contract Token is IToken, ERC20, AccessControl {
+contract FIRE is IFire, ERC20, AccessControl {
     using SafeMath for uint256;
+    string internal constant name = "Fire Network";
+    string internal constant symbol = "FIRE";
+
+    // Addresses of external contracts
+    address external constant UNISWAP_ADDRESS=0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+
+    // Addresses of deployed contracts for calling init
+    address internal constant TOKEN_ADDRESS=0x77C81BF05AE3E07c20272E550f650e7f796dD1Ca;
+    address internal constant AUCTION_ADDRESS=0x3C55Fa6AAC6Cb044f64ac5AD7527Dc1dA9708177;
+    address internal constant STAKING_ADDRESS=0x47009fdb86cE632aafb50B1aC6DFf88c6a439540;
+    address internal constant FOREIGN_SWAP_ADDRESS=0xd1043A07F6d5d970b89449F4E9806d57043fEA7b;
+    address internal constant BPD_ADDRESS=0x078E7Bfce8f485E37f174D6a453ae1cA4D493147;
+    address internal constant SUBBALANCES_ADDRESS=0x81ADe69F59181AF901F920E6ad45696B9748Eff5;
+
+    address internal constant SWAPPER_ADDRESS=0x36C0f2e421bF40Ec28845e81CD4038C19e09E33C;
 
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
