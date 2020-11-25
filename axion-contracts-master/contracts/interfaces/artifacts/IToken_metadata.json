@@ -1,0 +1,77 @@
+{
+	"compiler": {
+		"version": "0.6.6+commit.6c089d02"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "burn",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "mint",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"methods": {}
+		},
+		"userdoc": {
+			"methods": {}
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"localhost/contracts/interfaces/IToken.sol": "IToken"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"localhost/contracts/interfaces/IToken.sol": {
+			"keccak256": "0xca5d3e330e25a74f392f7d4c60df2ecaf2dc0e6dd56808a38c80cd2196e46276",
+			"urls": [
+				"bzz-raw://17f53c7d923fe07b2afbde8b5042fd3ce409c0d84c81276b4dde4c291a80c7fd",
+				"dweb:/ipfs/QmcbRB29QWFX72prtYsnQBpfyAcpv4YKP9H1ERSiQhyqBD"
+			]
+		}
+	},
+	"version": 1
+}
