@@ -108,27 +108,27 @@ contract Token is IToken, Context, AccessControl {
     }
     
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
+        transfer(_msgSender(), recipient, amount);
         return true;
     }
 
     function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
+        return allowance[owner][spender];
     }
 
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
+        approve(_msgSender(), spender, amount);
         return true;
     }
     
     function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        transfer(sender, recipient, amount);
+        approve(sender, msg.sender(), allowance[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
     
     function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        approve(_msgSender(), spender, allowance[_msgSender()][spender].add(addedValue));
         return true;
     }
     
@@ -148,9 +148,7 @@ contract Token is IToken, Context, AccessControl {
         return SETTER_ROLE;
     }
 
-    function getSwapTokenBalance(uint256) external view returns (uint256) {
-        return swapTokenBalance;
-    }
+
 
     function initDeposit(uint256 _amount) external onlySwapper {
         require(
@@ -166,18 +164,12 @@ contract Token is IToken, Context, AccessControl {
         swapToken.transfer(_msgSender(), _amount);
     }
 
-    function initSwap() external onlySwapper {
-        require(!swapIsOver, "swap is over");
-        uint256 balance = swapTokenBalance;
-        swapTokenBalance = 0;
-        require(balance > 0, "balance <= 0");
-        mint(_msgSender(), balance);
-    }
+
 
 
 
     function burn(address from, uint256 amount) external override onlyMinter {
-        burn(from, amount);
+        Burn(from, amount);
     }
 
     // Helpers
