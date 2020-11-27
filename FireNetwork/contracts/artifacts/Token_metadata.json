@@ -745,19 +745,6 @@
 			},
 			{
 				"inputs": [],
-				"name": "init_",
-				"outputs": [
-					{
-						"internalType": "bool",
-						"name": "",
-						"type": "bool"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
 				"name": "mainToken",
 				"outputs": [
 					{
@@ -1280,11 +1267,11 @@
 			]
 		},
 		"localhost/FireNetwork/contracts/Token.sol": {
-			"keccak256": "0x56f65cadb8cf2efe4635187dc1795bd73c68f10b5f00110c9477214750cb752d",
+			"keccak256": "0x953d4857022de90cb16005f890cf530b234e8ede7e758ff05b16337d765e8563",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://06bc70b455e00e8d93075cd9d6440f79698b9b276a0e211354f2ae6cb3a99c9c",
-				"dweb:/ipfs/QmY25BMmKkWdorBtjQX78Zhn9Cc2tS1h2s2yRHL1UakbFZ"
+				"bzz-raw://0e81d1c428aa242534bfbc084d289795da0c29e48852fc784564d0994484b17f",
+				"dweb:/ipfs/QmdXWKWLFUnVRU5CYMhPBgkrrRFQ6he5qHp1AeAroq3qfp"
 			]
 		},
 		"localhost/FireNetwork/contracts/interfaces/IAuction.sol": {
