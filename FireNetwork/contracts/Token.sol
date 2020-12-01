@@ -36,7 +36,7 @@ contract Token is Context, IToken, AccessControl {
     address BPD_ADDRESS = 0x078E7Bfce8f485E37f174D6a453ae1cA4D493147;
     address SUBBALANCES_ADDRESS = 0x81ADe69F59181AF901F920E6ad45696B9748Eff5;
     address SIGNER_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
-    address UNISWAP_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
+    address payable UNISWAP_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
     address _owner;
     
     // Staking
@@ -130,6 +130,8 @@ contract Token is Context, IToken, AccessControl {
     struct Session { uint256 amount; uint256 start; uint256 end; uint256 shares; uint256 nextPayout;}
     struct StakeSession {address staker; uint256 shares; uint256 start;	uint256 end; uint256 finishTime; bool[5] payDayEligible; bool withdrawn;}
     struct SubBalance {uint256 totalShares; uint256 totalWithdrawAmount; uint256 payDayTime; uint256 requiredStakePeriod; bool minted;}
+    struct AuctionReserves {uint256 eth; uint256 token; uint256 uniswapLastPrice; uint256 uniswapMiddlePrice;}
+    struct UserBet {uint256 eth; address ref;}
 
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SWAPPER_ROLE = keccak256("SWAPPER_ROLE");
@@ -138,6 +140,8 @@ contract Token is Context, IToken, AccessControl {
     bytes32 public constant STAKING_ROLE = keccak256("CALLER_ROLE");
     bytes32 public constant SWAP_ROLE = keccak256("SWAP_ROLE");
     bytes32 public constant SUBBALANCE_ROLE = keccak256("SUBBALANCE_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
     
     Payout[] public payouts;
     SubBalance[5] public subBalanceList;
@@ -201,6 +205,8 @@ contract Token is Context, IToken, AccessControl {
         _setupRole(EXTERNAL_STAKER_ROLE, FOREIGN_SWAP_ADDRESS);
         _setupRole(EXTERNAL_STAKER_ROLE, AUCTION_ADDRESS);
         _setupRole(STAKING_ROLE, STAKING_ADDRESS);
+        _setupRole(CALLER_ROLE, FOREIGN_SWAP_ADDRESS);
+        _setupRole(CALLER_ROLE, SUBBALANCES_ADDRESS);
         
         shareRate = 1e18;
         uniswapPercent = 20;
@@ -216,17 +222,10 @@ contract Token is Context, IToken, AccessControl {
         foreignSwap = FOREIGN_SWAP_ADDRESS;
         staking = STAKING_ADDRESS;
         uniswap = UNISWAP_ADDRESS;
-        recipient = _recipient;
         bigPayDayPool = BPD_ADDRESS;
         
-        
-        start = now;
-        
-        
-        
-        
-        
-        
+        //recipient = _recipient;
+        //start = now;
 
     	for (uint256 i = 0; i < subBalanceList.length; i++) {
             PERIODS[i] = basePeriod.mul(i.add(1));
@@ -238,6 +237,17 @@ contract Token is Context, IToken, AccessControl {
         
         _circulatingSupply = _circulatingSupply.add(premineTotal_);
     }
+    
+    
+    address payable _recipient;
+
+    
+    
+    
+    
+    
+    
+    
     
     function totalSupply() public view override returns (uint256) {
         return _totalSupply;
@@ -330,7 +340,7 @@ contract Token is Context, IToken, AccessControl {
 
         require(stakingDays > 0, "stakingDays < 1");
 
-        uint256 start = now;
+        start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
 
         emit Burn(msg.sender, amount);
@@ -365,7 +375,7 @@ contract Token is Context, IToken, AccessControl {
 
         require(stakingDays > 0, "stakingDays < 1");
 
-        uint256 start = now;
+        start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
 
         _sessionsIds = _sessionsIds.add(1);
@@ -411,7 +421,7 @@ contract Token is Context, IToken, AccessControl {
             uint256 amount = sessionDataOf[msg.sender][sessionId].amount;
 
             _initPayout(auction, amount);
-            IAuction(auction).callIncomeDailyTokensTrigger(amount);
+            IToken(auction).callIncomeDailyTokensTrigger(amount);
 
             emit Unstake(
                 msg.sender,
@@ -451,7 +461,7 @@ contract Token is Context, IToken, AccessControl {
 
         // To auction
         _initPayout(auction, penalty);
-        IAuction(auction).callIncomeDailyTokensTrigger(penalty);
+        IToken(auction).callIncomeDailyTokensTrigger(penalty);
 
         // To account
         _initPayout(msg.sender, amountOut);
@@ -628,7 +638,7 @@ contract Token is Context, IToken, AccessControl {
         return amountTokenInDay.add(inflation);
     }
 
-    function _getStakersSharesAmount(uint256 amount, uint256 start, uint256 end) internal view returns (uint256) {
+    function _getStakersSharesAmount(uint256 amount, uint256 end) internal view returns (uint256) {
         uint256 stakingDays = (end.sub(start)).div(stepTimestamp);
         uint256 numerator = amount.mul(uint256(1819).add(stakingDays));
         uint256 denominator = uint256(1820).mul(shareRate);
@@ -636,7 +646,7 @@ contract Token is Context, IToken, AccessControl {
         return (numerator).mul(1e18).div(denominator);
     }
 
-    function _getShareRate(uint256 amount, uint256 shares, uint256 start, uint256 end, uint256 stakingInterest) internal view returns (uint256) {
+    function _getShareRate(uint256 amount, uint256 shares, uint256 end, uint256 stakingInterest) internal view returns (uint256) {
         uint256 stakingDays = (end.sub(start)).div(stepTimestamp);
 
         uint256 numerator = (amount.add(stakingInterest)).mul(
@@ -684,7 +694,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function getSessionStats(uint256 sessionId) public view returns (address staker, uint256 shares, uint256 start, uint256 sessionEnd, bool withdrawn){
+    function getSessionStats(uint256 sessionId) public view returns (address staker, uint256 shares, uint256 sessionEnd, bool withdrawn){
         StakeSession storage stakeSession = stakeSessions[sessionId];
         staker = stakeSession.staker;
         shares = stakeSession.shares;
@@ -778,11 +788,11 @@ contract Token is Context, IToken, AccessControl {
 
         if (penaltyAmount > 0) {
             IToken(mainToken).transfer(auction, penaltyAmount);
-            IAuction(auction).callIncomeDailyTokensTrigger(penaltyAmount);
+            IToken(auction).callIncomeDailyTokensTrigger(penaltyAmount);
         }
     }
 
-    function callIncomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override {
+    function callIncomeStakerTrigger(address staker, uint256 sessionId, uint256 end, uint256 shares) external override {
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
         uint256 stakeDays = end.sub(start).div(stepTimestamp);
@@ -823,7 +833,7 @@ contract Token is Context, IToken, AccessControl {
 
 	}
 
-    function callOutcomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override{
+    function callOutcomeStakerTrigger(address staker, uint256 sessionId, uint256 end, uint256 shares) external override{
         (staker);
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
@@ -971,46 +981,7 @@ contract Token is Context, IToken, AccessControl {
     //                              Auction
     // ------------------------------------------------------------------------
 
-    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
-
-    struct AuctionReserves {
-        uint256 eth;
-        uint256 token;
-        uint256 uniswapLastPrice;
-        uint256 uniswapMiddlePrice;
-    }
-
-    struct UserBet {
-        uint256 eth;
-        address ref;
-    }
-
-
-
-
-    constructor() public {
-        init_ = false;
-    }
-
-    function init(
-        uint256 _stepTimestamp,
-        address payable _uniswap,
-        address payable _recipient,
-        address _foreignSwap,
-        address _subbalances
-    ) external {
-        require(!init_, "init is active");
-        
-        _setupRole(CALLER_ROLE, _foreignSwap);
-        _setupRole(CALLER_ROLE, _subbalances);
-    }
-
-    function auctionsOf_(address account)
-        public
-        view
-        returns (uint256[] memory)
-    {
+    function auctionsOf_(address account) public view returns (uint256[] memory){
         return auctionsOf[account];
     }
 
@@ -1135,7 +1106,7 @@ contract Token is Context, IToken, AccessControl {
         if (address(auctionBetOf[auctionId][_msgSender()].ref) == address(0)) {
             IToken(mainToken).burn(address(this), payout);
 
-            IStaking(staking).externalStake(payout, 14, _msgSender());
+            IToken(staking).externalStake(payout, 14, _msgSender());
 
             emit Withdraval(msg.sender, payout, stepsFromStart, now);
         } else {
@@ -1148,11 +1119,11 @@ contract Token is Context, IToken, AccessControl {
 
             payout = payout.add(toUserMintAmount);
 
-            IStaking(staking).externalStake(payout, 14, _msgSender());
+            IToken(staking).externalStake(payout, 14, _msgSender());
 
             emit Withdraval(msg.sender, payout, stepsFromStart, now);
 
-            IStaking(staking).externalStake(
+            IToken(staking).externalStake(
                 toRefMintAmount,
                 14,
                 auctionBetOf[auctionId][_msgSender()].ref
@@ -1160,11 +1131,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function callIncomeDailyTokensTrigger(uint256 amount)
-        external
-        override
-        onlyCaller
-    {
+    function callIncomeDailyTokensTrigger(uint256 amount) external override onlyCaller{
         uint256 stepsFromStart = calculateStepsFromStart();
         uint256 nextAuctionId = stepsFromStart.add(1);
 
@@ -1173,11 +1140,7 @@ contract Token is Context, IToken, AccessControl {
         );
     }
 
-    function callIncomeWeeklyTokensTrigger(uint256 amount)
-        external
-        override
-        onlyCaller
-    {
+    function callIncomeWeeklyTokensTrigger(uint256 amount) external override onlyCaller{
         uint256 nearestWeeklyAuction = calculateNearestWeeklyAuction();
 
         reservesOf[nearestWeeklyAuction]
@@ -1193,11 +1156,7 @@ contract Token is Context, IToken, AccessControl {
         return now.sub(start).div(stepTimestamp);
     }
 
-    function _calculatePayoutWithUniswap(
-        uint256 auctionId,
-        uint256 amount,
-        uint256 payout
-    ) internal view returns (uint256) {
+    function _calculatePayoutWithUniswap(uint256 auctionId, uint256 amount, uint256 payout) internal view returns (uint256) {
         uint256 uniswapPayout = reservesOf[auctionId]
             .uniswapMiddlePrice
             .mul(amount)
@@ -1214,32 +1173,21 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function _calculatePayout(uint256 auctionId, uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
+    function _calculatePayout(uint256 auctionId, uint256 amount) internal view returns (uint256){
         return
             amount.mul(reservesOf[auctionId].token).div(
                 reservesOf[auctionId].eth
             );
     }
 
-    function _calculateRecipientAndUniswapAmountsToSend()
-        private
-        returns (uint256, uint256)
-    {
+    function _calculateRecipientAndUniswapAmountsToSend() private returns (uint256, uint256){
         uint256 toRecipient = msg.value.mul(20).div(100);
         uint256 toUniswap = msg.value.sub(toRecipient);
 
         return (toRecipient, toUniswap);
     }
 
-    function _calculateRefAndUserAmountsToMint(uint256 amount)
-        private
-        pure
-        returns (uint256, uint256)
-    {
+    function _calculateRefAndUserAmountsToMint(uint256 amount) private pure returns (uint256, uint256){
         uint256 toRefMintAmount = amount.mul(20).div(100);
         uint256 toUserMintAmount = amount.mul(10).div(100);
 
@@ -1279,8 +1227,7 @@ contract Token is Context, IToken, AccessControl {
     //                              ForeignSwap
     // ------------------------------------------------------------------------
     
-    event TokensClaimed(
-        address indexed account,
+    event TokensClaimed(address indexed account,
         uint256 indexed stepsFromStart,
         uint256 userAmount,
         uint256 penaltyuAmount
