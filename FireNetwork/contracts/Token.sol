@@ -8,8 +8,6 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol";
 import "https://github.com/Uniswap/uniswap-v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IToken.sol";
-import "./interfaces/IAuction.sol";
-import "./interfaces/ISubBalances.sol";
 
     // ------------------------------------------------------------------------
     //                              Main Token Contract
@@ -38,6 +36,7 @@ contract Token is Context, IToken, AccessControl {
     address BPD_ADDRESS = 0x078E7Bfce8f485E37f174D6a453ae1cA4D493147;
     address SUBBALANCES_ADDRESS = 0x81ADe69F59181AF901F920E6ad45696B9748Eff5;
     address SIGNER_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
+    address UNISWAP_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
     address _owner;
     
     // Staking
@@ -58,9 +57,9 @@ contract Token is Context, IToken, AccessControl {
     uint256 private constant MAX_CLAIM_AMOUNT = 10000000000000000000000000;
     uint256 private constant TOTAL_SNAPSHOT_AMOUNT = 370121420541683530700000000000;
     uint256 private constant TOTAL_SNAPSHOT_ADDRESSES = 183035;
-    uint256 public constant _stepTimestamp = 86400;
+    
     uint256 private _sessionsIds;
-
+    uint256 private swapTokenBalance;
     uint256 public shareRate;
     uint256 public sharesTotalSupply;
     uint256 public nextPayoutCall;
@@ -69,9 +68,37 @@ contract Token is Context, IToken, AccessControl {
     uint256 public globalPayout;
     uint256 public globalPayin;
 	uint256 public startTimestamp;
-    uint256 public basePeriod;
+    uint256 public basePeriod = 10;
+    uint256 public lastAuctionEventId;
+    uint256 public start;
+    uint256 public uniswapPercent;
+    address public staking;
+    address payable public uniswap;
+    address payable public recipient;
+    uint256[5] public poolYearAmounts;
     uint256[5] public PERIODS;
+    uint256[5] public poolYearPercentages = [10, 15, 20, 25, 30]; // Percentages to pay out for each Big Pay Day
+    bool[5] public poolTransferred;
+    
+    
+    
+    
 
+    
+    
+    
+    uint256 private constant WEEKS = 50;
+    uint256 internal constant DAYS = WEEKS * 7;
+    uint256 private constant START_DAY = 1;
+    uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
+    uint256 internal constant secondsAday = 86400;
+    uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
+    uint256 public constant PERCENT_DENOMINATOR = 100;
+    
+    
+    
+    
+    
 
     
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
@@ -81,12 +108,19 @@ contract Token is Context, IToken, AccessControl {
     event Unstake( address indexed account, uint256 indexed sessionId, uint256 amount, uint256 start, uint256 end, uint256 shares);
     event MakePayout( uint256 indexed value, uint256 indexed sharesTotalSupply, uint256 indexed time);
     event PoolCreated(uint256 paydayTime, uint256 poolAmount);
+    event Bet(address indexed account, uint256 value, uint256 indexed auctionId, uint256 indexed time);
+    event Withdraval(address indexed account, uint256 value, uint256 indexed auctionId, uint256 indexed time);
+    event AuctionIsOver(uint256 eth, uint256 token, uint256 indexed auctionId);
     
     mapping(address => uint256) _balances;
+    mapping(address => uint256[]) public sessionsOf;
+    mapping(address => uint256[]) public auctionsOf;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) _allowances;
     mapping(address => mapping(uint256 => Session)) public sessionDataOf;
-    mapping(address => uint256[]) public sessionsOf;
+    mapping(uint256 => mapping(address => UserBet)) public auctionBetOf;
+    mapping(uint256 => mapping(address => bool)) public existAuctionsOf;
+    mapping(uint256 => AuctionReserves) public reservesOf;
     
     // Users
     mapping (address => uint256[]) userStakings;
@@ -102,10 +136,37 @@ contract Token is Context, IToken, AccessControl {
     bytes32 private constant SETTER_ROLE = keccak256("SETTER_ROLE");
     bytes32 public constant EXTERNAL_STAKER_ROLE = keccak256("EXTERNAL_STAKER_ROLE");
     bytes32 public constant STAKING_ROLE = keccak256("CALLER_ROLE");
+    bytes32 public constant SWAP_ROLE = keccak256("SWAP_ROLE");
+    bytes32 public constant SUBBALANCE_ROLE = keccak256("SUBBALANCE_ROLE");
     
     Payout[] public payouts;
     SubBalance[5] public subBalanceList;
-    uint256 private swapTokenBalance;
+    
+    
+    
+    
+    
+    
+    
+
+
+
+	
+    modifier onlyCaller() {
+        require(
+            hasRole(CALLER_ROLE, _msgSender()),
+            "Caller is not a caller role"
+        );
+        _;
+    }
+
+    modifier onlyManager() {
+        require(
+            hasRole(MANAGER_ROLE, _msgSender()),
+            "Caller is not a caller role"
+        );
+        _;
+    }
 
     modifier onlyMinter() {
         require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
@@ -129,27 +190,51 @@ contract Token is Context, IToken, AccessControl {
         );
         _;
     }
-    
-    constructor(address _setter) public {
-        _setupRole(SETTER_ROLE, _setter);
-    }
 
     constructor() public
     {
         _setupRole(SWAPPER_ROLE, msg.sender);
+        _setupRole(SWAP_ROLE, FOREIGN_SWAP_ADDRESS);
         _setupRole(SETTER_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
+        _setupRole(MANAGER_ROLE, msg.sender);
         _setupRole(EXTERNAL_STAKER_ROLE, FOREIGN_SWAP_ADDRESS);
         _setupRole(EXTERNAL_STAKER_ROLE, AUCTION_ADDRESS);
+        _setupRole(STAKING_ROLE, STAKING_ADDRESS);
         
         shareRate = 1e18;
-        stepTimestamp = _stepTimestamp;
-        nextPayoutCall = now.add(_stepTimestamp);
+        uniswapPercent = 20;
+        
+        stepTimestamp = secondsAday;
+        nextPayoutCall = now.add(secondsAday);
+        startTimestamp = now;
         startContract = now;
         
         subBalances = SUBBALANCES_ADDRESS;
         mainToken = TOKEN_ADDRESS;
         auction = AUCTION_ADDRESS;
+        foreignSwap = FOREIGN_SWAP_ADDRESS;
+        staking = STAKING_ADDRESS;
+        uniswap = UNISWAP_ADDRESS;
+        recipient = _recipient;
+        bigPayDayPool = BPD_ADDRESS;
+        
+        
+        start = now;
+        
+        
+        
+        
+        
+        
+
+    	for (uint256 i = 0; i < subBalanceList.length; i++) {
+            PERIODS[i] = basePeriod.mul(i.add(1));
+    		SubBalance storage subBalance = subBalanceList[i];
+            subBalance.payDayTime = startTimestamp.add(stepTimestamp.mul(PERIODS[i]));
+    		// subBalance.payDayEnd = subBalance.payDayStart.add(stepTimestamp);
+            subBalance.requiredStakePeriod = PERIODS[i];
+    	}
         
         _circulatingSupply = _circulatingSupply.add(premineTotal_);
     }
@@ -248,7 +333,7 @@ contract Token is Context, IToken, AccessControl {
         uint256 start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
 
-        Burn(msg.sender, amount);
+        emit Burn(msg.sender, amount);
         _sessionsIds = _sessionsIds.add(1);
         uint256 sessionId = _sessionsIds;
         uint256 shares = _getStakersSharesAmount(amount, start, end);
@@ -264,7 +349,7 @@ contract Token is Context, IToken, AccessControl {
 
         sessionsOf[msg.sender].push(sessionId);
 
-        ISubBalances(subBalances).callIncomeStakerTrigger(
+        IToken(subBalances).callIncomeStakerTrigger(
             msg.sender,
             sessionId,
             start,
@@ -298,7 +383,7 @@ contract Token is Context, IToken, AccessControl {
 
         sessionsOf[staker].push(sessionId);
 
-        ISubBalances(subBalances).callIncomeStakerTrigger(
+        IToken(subBalances).callIncomeStakerTrigger(
             staker,
             sessionId,
             start,
@@ -337,7 +422,7 @@ contract Token is Context, IToken, AccessControl {
                 shares
             );
 
-            ISubBalances(subBalances).callOutcomeStakerTrigger(
+            IToken(subBalances).callOutcomeStakerTrigger(
                 msg.sender,
                 sessionId,
                 sessionDataOf[msg.sender][sessionId].start,
@@ -380,7 +465,7 @@ contract Token is Context, IToken, AccessControl {
             shares
         );
 
-        ISubBalances(subBalances).callOutcomeStakerTrigger(
+        IToken(subBalances).callOutcomeStakerTrigger(
             msg.sender,
             sessionId,
             sessionDataOf[msg.sender][sessionId].start,
@@ -568,49 +653,6 @@ contract Token is Context, IToken, AccessControl {
     //                              subBalances
     // ------------------------------------------------------------------------
     
-       
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    function init(
-        address _foreignSwap,
-        address _bigPayDayPool,
-        address _auction,
-        address _staking,
-        uint256 _basePeriod
-    ) public
-      onlySetter
-    {
-        _setupRole(STAKING_ROLE, _staking);
-        foreignSwap = _foreignSwap;
-        bigPayDayPool = _bigPayDayPool;
-        auction = _auction;
-        stepTimestamp = _stepTimestamp;
-        basePeriod = _basePeriod;
-    	startTimestamp = now;
-
-    	for (uint256 i = 0; i < subBalanceList.length; i++) {
-            PERIODS[i] = _basePeriod.mul(i.add(1));
-    		SubBalance storage subBalance = subBalanceList[i];
-            subBalance.payDayTime = startTimestamp.add(stepTimestamp.mul(PERIODS[i]));
-    		// subBalance.payDayEnd = subBalance.payDayStart.add(stepTimestamp);
-            subBalance.requiredStakePeriod = PERIODS[i];
-    	}
-        renounceRole(SETTER_ROLE, _msgSender());
-    }
-
     function getStartTimes() public view returns (uint256[5] memory startTimes) {
         for (uint256 i = 0; i < subBalanceList.length; i ++) {
             startTimes[i] = subBalanceList[i].payDayTime;
@@ -642,11 +684,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function getSessionStats(uint256 sessionId) 
-        public 
-        view 
-        returns (address staker, uint256 shares, uint256 start, uint256 sessionEnd, bool withdrawn) 
-    {
+    function getSessionStats(uint256 sessionId) public view returns (address staker, uint256 shares, uint256 start, uint256 sessionEnd, bool withdrawn){
         StakeSession storage stakeSession = stakeSessions[sessionId];
         staker = stakeSession.staker;
         shares = stakeSession.shares;
@@ -666,12 +704,11 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-
     function calculateSessionPayout(uint256 sessionId) public view returns (uint256, uint256) {
         StakeSession storage stakeSession = stakeSessions[sessionId];
 
         uint256 subBalancePayoutAmount;
-        uint256[5] memory bpdRawAmounts = IBPD(bigPayDayPool).getPoolYearAmounts();
+        uint256[5] memory bpdRawAmounts = IToken(bigPayDayPool).getPoolYearAmounts();
         for (uint256 i = 0; i < subBalanceList.length; i++) {
             SubBalance storage subBalance = subBalanceList[i];
 
@@ -736,23 +773,16 @@ contract Token is Context, IToken, AccessControl {
         stakeSession.withdrawn = true;
 
         if (payoutAmount > 0) {
-            IERC20(mainToken).transfer(_msgSender(), payoutAmount);
+            IToken(mainToken).transfer(_msgSender(), payoutAmount);
         }
 
         if (penaltyAmount > 0) {
-            IERC20(mainToken).transfer(auction, penaltyAmount);
+            IToken(mainToken).transfer(auction, penaltyAmount);
             IAuction(auction).callIncomeDailyTokensTrigger(penaltyAmount);
         }
     }
 
-
-    function callIncomeStakerTrigger(
-        address staker,
-        uint256 sessionId,
-        uint256 start,
-        uint256 end,
-        uint256 shares
-    ) external override {
+    function callIncomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override {
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
         uint256 stakeDays = end.sub(start).div(stepTimestamp);
@@ -793,16 +823,7 @@ contract Token is Context, IToken, AccessControl {
 
 	}
 
-    function callOutcomeStakerTrigger(
-        address staker,
-        uint256 sessionId,
-        uint256 start,
-        uint256 end,
-        uint256 shares
-    ) 
-        external
-        override
-    {
+    function callOutcomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override{
         (staker);
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
@@ -847,7 +868,6 @@ contract Token is Context, IToken, AccessControl {
 
     }
 
-
     // Pool logic
     function generatePool() external returns (bool) {
     	for (uint256 i = 0; i < subBalanceList.length; i++) {
@@ -867,28 +887,597 @@ contract Token is Context, IToken, AccessControl {
     	}
     }
 
-
     // Pool logic
     function getPoolFromBPD(uint256 poolNumber) internal returns (uint256 poolAmount) {
-    	poolAmount = IBPD(bigPayDayPool).transferYearlyPool(poolNumber);
+    	poolAmount = IToken(bigPayDayPool).transferYearlyPool(poolNumber);
     }
 
     // Pool logic
     function _bpdAmountFromRaw(uint256 yearTokenAmount) internal view returns (uint256 totalAmount, uint256 addAmount) {
-    	uint256 currentTokenTotalSupply = IERC20(mainToken).totalSupply();
+    	uint256 currentTokenTotalSupply = IToken(mainToken).totalSupply();
 
         uint256 inflation = uint256(8).mul(currentTokenTotalSupply.add(currentSharesTotalSupply)).div(36500);
 
         
-        uint256 criticalMassCoeff = IForeignSwap(foreignSwap).getCurrentClaimedAmount().mul(1e18).div(
-            IForeignSwap(foreignSwap).getTotalSnapshotAmount());
+        uint256 criticalMassCoeff = IToken(foreignSwap).getCurrentClaimedAmount().mul(1e18).div(
+            IToken(foreignSwap).getTotalSnapshotAmount());
 
-       uint256 viralityCoeff = IForeignSwap(foreignSwap).getCurrentClaimedAddresses().mul(1e18).div(
-            IForeignSwap(foreignSwap).getTotalSnapshotAddresses());
+       uint256 viralityCoeff = IToken(foreignSwap).getCurrentClaimedAddresses().mul(1e18).div(
+            IToken(foreignSwap).getTotalSnapshotAddresses());
 
         uint256 totalUprisingCoeff = uint256(1e18).add(criticalMassCoeff).add(viralityCoeff);
 
         totalAmount = yearTokenAmount.add(inflation).mul(totalUprisingCoeff).div(1e18);
         addAmount = totalAmount.sub(yearTokenAmount);
+    }
+    
+    
+    // ------------------------------------------------------------------------
+    //                              BPD
+    // ------------------------------------------------------------------------
+
+    function getPoolYearAmounts() external view override returns (uint256[5] memory poolAmounts) {
+        return poolYearAmounts;
+    }
+
+    function getClosestPoolAmount() public view returns (uint256 poolAmount) {
+         for (uint256 i = 0; i < poolYearAmounts.length; i++) {
+            if (poolTransferred[i]) {
+                continue;
+            } else {
+                poolAmount = poolYearAmounts[i];
+                return poolAmount;
+            }
+
+            // return 0;
+        }
+    }
+
+    function callIncomeTokensTrigger(uint256 incomeAmountToken)external override{
+        require(hasRole(SWAP_ROLE, _msgSender()), "Caller is not a swap role");
+
+        // Divide income to years
+        uint256 part = incomeAmountToken.div(PERCENT_DENOMINATOR);
+
+        uint256 remainderPart = incomeAmountToken;
+        for (uint256 i = 0; i < poolYearAmounts.length; i++) {
+            if (i != poolYearAmounts.length - 1) {
+                uint256 poolPart = part.mul(poolYearPercentages[i]);
+                poolYearAmounts[i] = poolYearAmounts[i].add(poolPart);
+                remainderPart = remainderPart.sub(poolPart);
+            } else {
+                poolYearAmounts[i] = poolYearAmounts[i].add(remainderPart);
+            }
+        }
+    }
+
+    function transferYearlyPool(uint256 poolNumber) external override returns (uint256 transferAmount) {
+    	require(hasRole(SUBBALANCE_ROLE, _msgSender()), "Caller is not a subbalance role");
+
+        for (uint256 i = 0; i < poolYearAmounts.length; i++) {
+            if (poolNumber == i) {
+                require(!poolTransferred[i], "Already transferred");
+                transferAmount = poolYearAmounts[i];
+                poolTransferred[i] = true;
+
+                IToken(mainToken).transfer(_msgSender(), transferAmount);
+                return transferAmount;
+            }
+        }
+    }
+    
+    
+    // ------------------------------------------------------------------------
+    //                              Auction
+    // ------------------------------------------------------------------------
+
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant CALLER_ROLE = keccak256("CALLER_ROLE");
+
+    struct AuctionReserves {
+        uint256 eth;
+        uint256 token;
+        uint256 uniswapLastPrice;
+        uint256 uniswapMiddlePrice;
+    }
+
+    struct UserBet {
+        uint256 eth;
+        address ref;
+    }
+
+
+
+
+    constructor() public {
+        init_ = false;
+    }
+
+    function init(
+        uint256 _stepTimestamp,
+        address payable _uniswap,
+        address payable _recipient,
+        address _foreignSwap,
+        address _subbalances
+    ) external {
+        require(!init_, "init is active");
+        
+        _setupRole(CALLER_ROLE, _foreignSwap);
+        _setupRole(CALLER_ROLE, _subbalances);
+    }
+
+    function auctionsOf_(address account)
+        public
+        view
+        returns (uint256[] memory)
+    {
+        return auctionsOf[account];
+    }
+
+    function setUniswapPercent(uint256 percent) external onlyManager {
+        uniswapPercent = percent;
+    }
+
+    function getUniswapLastPrice() public view returns (uint256) {
+        address[] memory path = new address[](2);
+
+        path[0] = IUniswapV2Router02(uniswap).WETH();
+        path[1] = mainToken;
+
+        uint256 price = IUniswapV2Router02(uniswap).getAmountsOut(
+            1e18,
+            path
+        )[1];
+
+        return price;
+    }
+
+    function getUniswapMiddlePriceForSevenDays() public view returns (uint256) {
+        uint256 stepsFromStart = calculateStepsFromStart();
+
+        uint256 index = stepsFromStart;
+        uint256 sum;
+        uint256 points;
+
+        while (points != 7) {
+            if (reservesOf[index].uniswapLastPrice != 0) {
+                sum = sum.add(reservesOf[index].uniswapLastPrice);
+                points = points.add(1);
+            }
+
+            if (index == 0) break;
+
+            index = index.sub(1);
+        }
+
+        if (sum == 0) return getUniswapLastPrice();
+        else return sum.div(points);
+    }
+
+    function _updatePrice() internal {
+        uint256 stepsFromStart = calculateStepsFromStart();
+
+        reservesOf[stepsFromStart].uniswapLastPrice = getUniswapLastPrice();
+
+        reservesOf[stepsFromStart]
+            .uniswapMiddlePrice = getUniswapMiddlePriceForSevenDays();
+    }
+
+    function bet(uint256 deadline, address ref) external payable {
+        _saveAuctionData();
+        _updatePrice();
+
+        require(_msgSender() != ref, "msg.sender == ref");
+
+        (
+            uint256 toRecipient,
+            uint256 toUniswap
+        ) = _calculateRecipientAndUniswapAmountsToSend();
+
+        _swapEth(toUniswap, deadline);
+
+        uint256 stepsFromStart = calculateStepsFromStart();
+
+        auctionBetOf[stepsFromStart][_msgSender()].ref = ref;
+
+        auctionBetOf[stepsFromStart][_msgSender()]
+            .eth = auctionBetOf[stepsFromStart][_msgSender()].eth.add(
+            msg.value
+        );
+
+        if (!existAuctionsOf[stepsFromStart][_msgSender()]) {
+            auctionsOf[_msgSender()].push(stepsFromStart);
+            existAuctionsOf[stepsFromStart][_msgSender()] = true;
+        }
+
+        reservesOf[stepsFromStart].eth = reservesOf[stepsFromStart].eth.add(
+            msg.value
+        );
+
+        recipient.transfer(toRecipient);
+
+        emit Bet(msg.sender, msg.value, stepsFromStart, now);
+    }
+
+    function withdraw(uint256 auctionId) external {
+        _saveAuctionData();
+        _updatePrice();
+
+        uint256 stepsFromStart = calculateStepsFromStart();
+
+        require(stepsFromStart > auctionId, "auction is active");
+
+        uint256 auctionETHUserBalance = auctionBetOf[auctionId][_msgSender()]
+            .eth;
+
+        auctionBetOf[auctionId][_msgSender()].eth = 0;
+
+        require(auctionETHUserBalance > 0, "zero balance in auction");
+
+        uint256 payout = _calculatePayout(auctionId, auctionETHUserBalance);
+
+        uint256 uniswapPayoutWithPercent = _calculatePayoutWithUniswap(
+            auctionId,
+            auctionETHUserBalance,
+            payout
+        );
+
+        if (payout > uniswapPayoutWithPercent) {
+            uint256 nextWeeklyAuction = calculateNearestWeeklyAuction();
+
+            reservesOf[nextWeeklyAuction].token = reservesOf[nextWeeklyAuction]
+                .token
+                .add(payout.sub(uniswapPayoutWithPercent));
+
+            payout = uniswapPayoutWithPercent;
+        }
+
+        if (address(auctionBetOf[auctionId][_msgSender()].ref) == address(0)) {
+            IToken(mainToken).burn(address(this), payout);
+
+            IStaking(staking).externalStake(payout, 14, _msgSender());
+
+            emit Withdraval(msg.sender, payout, stepsFromStart, now);
+        } else {
+            IToken(mainToken).burn(address(this), payout);
+
+            (
+                uint256 toRefMintAmount,
+                uint256 toUserMintAmount
+            ) = _calculateRefAndUserAmountsToMint(payout);
+
+            payout = payout.add(toUserMintAmount);
+
+            IStaking(staking).externalStake(payout, 14, _msgSender());
+
+            emit Withdraval(msg.sender, payout, stepsFromStart, now);
+
+            IStaking(staking).externalStake(
+                toRefMintAmount,
+                14,
+                auctionBetOf[auctionId][_msgSender()].ref
+            );
+        }
+    }
+
+    function callIncomeDailyTokensTrigger(uint256 amount)
+        external
+        override
+        onlyCaller
+    {
+        uint256 stepsFromStart = calculateStepsFromStart();
+        uint256 nextAuctionId = stepsFromStart.add(1);
+
+        reservesOf[nextAuctionId].token = reservesOf[nextAuctionId].token.add(
+            amount
+        );
+    }
+
+    function callIncomeWeeklyTokensTrigger(uint256 amount)
+        external
+        override
+        onlyCaller
+    {
+        uint256 nearestWeeklyAuction = calculateNearestWeeklyAuction();
+
+        reservesOf[nearestWeeklyAuction]
+            .token = reservesOf[nearestWeeklyAuction].token.add(amount);
+    }
+
+    function calculateNearestWeeklyAuction() public view returns (uint256) {
+        uint256 stepsFromStart = calculateStepsFromStart();
+        return stepsFromStart.add(uint256(7).sub(stepsFromStart.mod(7)));
+    }
+
+    function calculateStepsFromStart() public view returns (uint256) {
+        return now.sub(start).div(stepTimestamp);
+    }
+
+    function _calculatePayoutWithUniswap(
+        uint256 auctionId,
+        uint256 amount,
+        uint256 payout
+    ) internal view returns (uint256) {
+        uint256 uniswapPayout = reservesOf[auctionId]
+            .uniswapMiddlePrice
+            .mul(amount)
+            .div(1e18);
+
+        uint256 uniswapPayoutWithPercent = uniswapPayout.add(
+            uniswapPayout.mul(uniswapPercent).div(100)
+        );
+
+        if (payout > uniswapPayoutWithPercent) {
+            return uniswapPayoutWithPercent;
+        } else {
+            return payout;
+        }
+    }
+
+    function _calculatePayout(uint256 auctionId, uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
+        return
+            amount.mul(reservesOf[auctionId].token).div(
+                reservesOf[auctionId].eth
+            );
+    }
+
+    function _calculateRecipientAndUniswapAmountsToSend()
+        private
+        returns (uint256, uint256)
+    {
+        uint256 toRecipient = msg.value.mul(20).div(100);
+        uint256 toUniswap = msg.value.sub(toRecipient);
+
+        return (toRecipient, toUniswap);
+    }
+
+    function _calculateRefAndUserAmountsToMint(uint256 amount)
+        private
+        pure
+        returns (uint256, uint256)
+    {
+        uint256 toRefMintAmount = amount.mul(20).div(100);
+        uint256 toUserMintAmount = amount.mul(10).div(100);
+
+        return (toRefMintAmount, toUserMintAmount);
+    }
+
+    function _swapEth(uint256 amount, uint256 deadline) private {
+        address[] memory path = new address[](2);
+
+        path[0] = IUniswapV2Router02(uniswap).WETH();
+        path[1] = mainToken;
+
+        IUniswapV2Router02(uniswap).swapExactETHForTokens{value: amount}(
+            0,
+            path,
+            staking,
+            deadline
+        );
+    }
+
+    function _saveAuctionData() internal {
+        uint256 stepsFromStart = calculateStepsFromStart();
+        AuctionReserves memory reserves = reservesOf[stepsFromStart];
+
+        if (lastAuctionEventId < stepsFromStart) {
+            emit AuctionIsOver(reserves.eth, reserves.token, stepsFromStart);
+            lastAuctionEventId = stepsFromStart;
+        }
+    }
+    
+    
+    
+    
+    
+    
+    // ------------------------------------------------------------------------
+    //                              ForeignSwap
+    // ------------------------------------------------------------------------
+    
+    event TokensClaimed(
+        address indexed account,
+        uint256 indexed stepsFromStart,
+        uint256 userAmount,
+        uint256 penaltyuAmount
+    );
+
+    bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
+
+    uint256 public start;
+    uint256 public stepTimestamp;
+    uint256 public stakePeriod;
+    uint256 public maxClaimAmount;
+    // uint256 public constant PERIOD = 350;
+
+    address public mainToken;
+    address public staking;
+    address public auction;
+    address public bigPayDayPool;
+    address public signerAddress;
+
+    mapping(address => uint256) public claimedBalanceOf;
+
+    uint256 internal claimedAmount;
+    uint256 internal totalSnapshotAmount;
+    uint256 internal claimedAddresses;
+    uint256 internal totalSnapshotAddresses;
+
+    modifier onlySetter() {
+        require(hasRole(SETTER_ROLE, _msgSender()), "Caller is not a setter");
+        _;
+    }
+
+    constructor(address _setter) public {
+        _setupRole(SETTER_ROLE, _setter);
+    }
+
+    function init(
+        address _signer,
+        uint256 _stepTimestamp,
+        uint256 _stakePeriod,
+        uint256 _maxClaimAmount,
+        address _mainToken,
+        address _auction,
+        address _staking,
+        address _bigPayDayPool,
+        uint256 _totalSnapshotAmount,
+        uint256 _totalSnapshotAddresses
+    ) external onlySetter {
+        signerAddress = _signer;
+        start = now;
+        stepTimestamp = _stepTimestamp;
+        stakePeriod = _stakePeriod;
+        maxClaimAmount = _maxClaimAmount;
+        mainToken = _mainToken;
+        staking = _staking;
+        auction = _auction;
+        bigPayDayPool = _bigPayDayPool;
+        totalSnapshotAmount = _totalSnapshotAmount;
+        totalSnapshotAddresses = _totalSnapshotAddresses;
+        renounceRole(SETTER_ROLE, _msgSender());
+    }
+
+    function getCurrentClaimedAmount()
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return claimedAmount;
+    }
+
+    function getTotalSnapshotAmount() external override view returns (uint256) {
+        return totalSnapshotAmount;
+    }
+
+    function getCurrentClaimedAddresses()
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return claimedAddresses;
+    }
+
+    function getTotalSnapshotAddresses()
+        external
+        override
+        view
+        returns (uint256)
+    {
+        return totalSnapshotAddresses;
+    }
+
+    function getMessageHash(uint256 amount, address account)
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(amount, account));
+    }
+
+    function check(uint256 amount, bytes memory signature)
+        public
+        view
+        returns (bool)
+    {
+        bytes32 messageHash = getMessageHash(amount, address(msg.sender));
+        return ECDSA.recover(messageHash, signature) == signerAddress;
+    }
+
+    function getUserClaimableAmountFor(uint256 amount)
+        public
+        view
+        returns (uint256, uint256)
+    {
+        if (amount > 0) {
+            (
+                uint256 amountOut,
+                uint256 delta,
+                uint256 deltaAuctionWeekly
+            ) = getClaimableAmount(amount);
+            uint256 deltaPenalized = delta.add(deltaAuctionWeekly);
+            return (amountOut, deltaPenalized);
+        } else {
+            return (0, 0);
+        }
+    }
+
+    function claimFromForeign(uint256 amount, bytes memory signature)
+        public
+        returns (bool)
+    {
+        require(amount > 0, "CLAIM: amount <= 0");
+        require(
+            check(amount, signature),
+            "CLAIM: cannot claim because signature is not correct"
+        );
+        require(claimedBalanceOf[msg.sender] == 0, "CLAIM: cannot claim twice");
+
+        (
+            uint256 amountOut,
+            uint256 delta,
+            uint256 deltaAuctionWeekly
+        ) = getClaimableAmount(amount);
+
+        uint256 deltaPart = delta.div(stakePeriod);
+        uint256 deltaAuctionDaily = deltaPart.mul(stakePeriod.sub(uint256(1)));
+
+        IToken(mainToken).mint(auction, deltaAuctionDaily);
+        IAuction(auction).callIncomeDailyTokensTrigger(deltaAuctionDaily);
+
+        if (deltaAuctionWeekly > 0) {
+            IToken(mainToken).mint(auction, deltaAuctionWeekly);
+            IAuction(auction).callIncomeWeeklyTokensTrigger(deltaAuctionWeekly);
+        }
+
+        IToken(mainToken).mint(bigPayDayPool, deltaPart);
+        IBPD(bigPayDayPool).callIncomeTokensTrigger(deltaPart);
+        IStaking(staking).externalStake(amountOut, stakePeriod, msg.sender);
+
+        claimedBalanceOf[msg.sender] = amount;
+        claimedAmount = claimedAmount.add(amount);
+        claimedAddresses = claimedAddresses.add(uint256(1));
+
+        emit TokensClaimed(msg.sender, calculateStepsFromStart(), amountOut, deltaPart);
+
+        return true;
+    }
+
+    function calculateStepsFromStart() public view returns (uint256) {
+        return (now.sub(start)).div(stepTimestamp);
+    }
+
+    // function calculateStakeEndTime(uint256 startTime) internal view returns (uint256) {
+    //     uint256 stakePeriod = stepTimestamp.mul(stakePeriod);
+    //     return  startTime.add(stakePeriod);
+    // }
+
+    function getClaimableAmount(uint256 amount)
+        internal
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        uint256 deltaAuctionWeekly = 0;
+        if (amount > maxClaimAmount) {
+            deltaAuctionWeekly = amount.sub(maxClaimAmount);
+            amount = maxClaimAmount;
+        }
+
+        uint256 stepsFromStart = calculateStepsFromStart();
+        uint256 daysPassed = stepsFromStart > stakePeriod ? stakePeriod : stepsFromStart;
+        uint256 delta = amount.mul(daysPassed).div(stakePeriod);
+        uint256 amountOut = amount.sub(delta);
+
+        return (amountOut, delta, deltaAuctionWeekly);
     }
 }

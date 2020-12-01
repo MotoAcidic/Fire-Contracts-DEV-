@@ -142,6 +142,111 @@
 				"type": "function"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "callIncomeDailyTokensTrigger",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "staker",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sessionId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "start",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "end",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "shares",
+						"type": "uint256"
+					}
+				],
+				"name": "callIncomeStakerTrigger",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "incomeAmountToken",
+						"type": "uint256"
+					}
+				],
+				"name": "callIncomeTokensTrigger",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "callIncomeWeeklyTokensTrigger",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "staker",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sessionId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "start",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "end",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "shares",
+						"type": "uint256"
+					}
+				],
+				"name": "callOutcomeStakerTrigger",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "circulatingSupply",
 				"outputs": [
@@ -175,6 +280,71 @@
 				"name": "externalStake",
 				"outputs": [],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getCurrentClaimedAddresses",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getCurrentClaimedAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getPoolYearAmounts",
+				"outputs": [
+					{
+						"internalType": "uint256[5]",
+						"name": "poolAmounts",
+						"type": "uint256[5]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTotalSnapshotAddresses",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTotalSnapshotAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -260,6 +430,25 @@
 				],
 				"stateMutability": "nonpayable",
 				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "poolNumber",
+						"type": "uint256"
+					}
+				],
+				"name": "transferYearlyPool",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
 			}
 		],
 		"devdoc": {
@@ -290,11 +479,11 @@
 	},
 	"sources": {
 		"localhost/FireNetwork/contracts/interfaces/IToken.sol": {
-			"keccak256": "0xb0455f91e8d5e58598af6088659da425082eb4e3c8220c7bd1190f6ff2704dd4",
+			"keccak256": "0x7332eb1de4cc7a430b61431b7061ab6e79ce8cdbda6814aa88ce3af1b776c236",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://88b49c327db5195ff0153fcc2d3be56b1c8b74a5e8822aaa6370f1b295fcfe6d",
-				"dweb:/ipfs/QmNrYDoy33nc4LNabMJ4v2x79EMErNfviPeXDhDxwmqcv8"
+				"bzz-raw://1e703d285b212abcb4d82a2f93ad66679dc6c4bd2b926c14a46954b123da329f",
+				"dweb:/ipfs/QmURn4nU4HiFcNWU3DZeM8zD4qg5xroKREE7WUkehDKawA"
 			]
 		}
 	},
