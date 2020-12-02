@@ -48,7 +48,7 @@
 			"allowance(address,address)": "dd62ed3e",
 			"approve(address,uint256)": "095ea7b3",
 			"balanceOf(address)": "70a08231",
-			"burn(uint256)": "42966c68",
+			"burn(address,uint256)": "9dc29fac",
 			"callIncomeDailyTokensTrigger(uint256)": "c22fd76f",
 			"callIncomeStakerTrigger(address,uint256,uint256,uint256,uint256)": "5028ed72",
 			"callIncomeTokensTrigger(uint256)": "8d02b12c",
@@ -188,6 +188,11 @@
 		},
 		{
 			"inputs": [
+				{
+					"internalType": "address",
+					"name": "from",
+					"type": "address"
+				},
 				{
 					"internalType": "uint256",
 					"name": "_value",

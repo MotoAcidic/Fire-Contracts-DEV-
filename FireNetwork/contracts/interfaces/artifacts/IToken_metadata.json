@@ -125,6 +125,11 @@
 			{
 				"inputs": [
 					{
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
 						"internalType": "uint256",
 						"name": "_value",
 						"type": "uint256"
@@ -479,11 +484,11 @@
 	},
 	"sources": {
 		"localhost/FireNetwork/contracts/interfaces/IToken.sol": {
-			"keccak256": "0x7332eb1de4cc7a430b61431b7061ab6e79ce8cdbda6814aa88ce3af1b776c236",
+			"keccak256": "0x8654f9c449be86b9a0b2976102809491c32457699634667bb964b5451df33c6d",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1e703d285b212abcb4d82a2f93ad66679dc6c4bd2b926c14a46954b123da329f",
-				"dweb:/ipfs/QmURn4nU4HiFcNWU3DZeM8zD4qg5xroKREE7WUkehDKawA"
+				"bzz-raw://4c4a9d7898ac49a56ef6aa7ce5e493708e63cefca6b6231bcd766b6dcb7e3810",
+				"dweb:/ipfs/QmUqmChBj5CkFAYBdvMST6Jheiv6Hnenbyd8AvCjM5rsJ2"
 			]
 		}
 	},

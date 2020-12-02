@@ -4,7 +4,7 @@ pragma solidity ^0.6.0;
 
 interface IToken {
     function mint(address Mint_To, uint256 amount) external;
-    function burn(uint256 _value) external returns (bool);
+    function burn(address from, uint256 _value) external returns (bool);
     function totalSupply() external view returns (uint256);
     function circulatingSupply() external view returns (uint256);
     function balanceOf(address account) external view returns (uint256);

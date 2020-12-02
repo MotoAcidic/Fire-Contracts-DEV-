@@ -6,6 +6,7 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol";
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/cryptography/ECDSA.sol";
 import "https://github.com/Uniswap/uniswap-v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IToken.sol";
 
@@ -38,6 +39,7 @@ contract Token is Context, IToken, AccessControl {
     address SIGNER_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
     address payable UNISWAP_ADDRESS = 0x849d89FfA8F91fF433A3A1D23865d15C8495Cc7B;
     address _owner;
+
     
     // Staking
     address public mainToken;
@@ -48,9 +50,12 @@ contract Token is Context, IToken, AccessControl {
     address public foreignSwap;
 	address public bigPayDayPool;
 	
+	// Foreign swap
+	address public signerAddress;
+	
     // Auction init parameters
     address MANAGER_ADDRESS = 0x4B346C42D212bBD0Bf85A01B1da80C2841149EA2;
-    address ETH_RECIPIENT = 0x4B346C42D212bBD0Bf85A01B1da80C2841149EA2;
+    address payable ETH_RECIPIENT = 0x4B346C42D212bBD0Bf85A01B1da80C2841149EA2;
     
     // HEX Params
     uint256 private constant AUTOSTAKE_PERIOD = 350;
@@ -70,9 +75,11 @@ contract Token is Context, IToken, AccessControl {
 	uint256 public startTimestamp;
     uint256 public basePeriod = 10;
     uint256 public lastAuctionEventId;
-    uint256 public start;
+    //uint256 public start;
     uint256 public uniswapPercent;
     address public staking;
+    uint256 public stakePeriod;
+    uint256 public maxClaimAmount;
     address payable public uniswap;
     address payable public recipient;
     uint256[5] public poolYearAmounts;
@@ -85,12 +92,15 @@ contract Token is Context, IToken, AccessControl {
     
 
     
+    uint256 internal claimedAmount;
+    uint256 internal totalSnapshotAmount;
+    uint256 internal claimedAddresses;
+    uint256 internal totalSnapshotAddresses;
     
-    
-    uint256 private constant WEEKS = 50;
-    uint256 internal constant DAYS = WEEKS * 7;
-    uint256 private constant START_DAY = 1;
-    uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
+    //uint256 private constant WEEKS = 50;
+    //uint256 internal constant DAYS = WEEKS * 7;
+    //uint256 private constant START_DAY = 1;
+    //uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     uint256 public constant PERCENT_DENOMINATOR = 100;
@@ -111,8 +121,10 @@ contract Token is Context, IToken, AccessControl {
     event Bet(address indexed account, uint256 value, uint256 indexed auctionId, uint256 indexed time);
     event Withdraval(address indexed account, uint256 value, uint256 indexed auctionId, uint256 indexed time);
     event AuctionIsOver(uint256 eth, uint256 token, uint256 indexed auctionId);
-    
+    event TokensClaimed(address indexed account, uint256 indexed stepsFromStart, uint256 userAmount, uint256 penaltyuAmount);
+        
     mapping(address => uint256) _balances;
+    mapping(address => uint256) public claimedBalanceOf;
     mapping(address => uint256[]) public sessionsOf;
     mapping(address => uint256[]) public auctionsOf;
     mapping(address => uint256) internal tokenBalanceLedger_;
@@ -121,6 +133,7 @@ contract Token is Context, IToken, AccessControl {
     mapping(uint256 => mapping(address => UserBet)) public auctionBetOf;
     mapping(uint256 => mapping(address => bool)) public existAuctionsOf;
     mapping(uint256 => AuctionReserves) public reservesOf;
+    
     
     // Users
     mapping (address => uint256[]) userStakings;
@@ -148,12 +161,6 @@ contract Token is Context, IToken, AccessControl {
     
     
     
-    
-    
-    
-    
-
-
 
 	
     modifier onlyCaller() {
@@ -210,6 +217,10 @@ contract Token is Context, IToken, AccessControl {
         
         shareRate = 1e18;
         uniswapPercent = 20;
+        stakePeriod = AUTOSTAKE_PERIOD;
+        maxClaimAmount = MAX_CLAIM_AMOUNT;
+        totalSnapshotAmount = TOTAL_SNAPSHOT_AMOUNT;
+        totalSnapshotAddresses = TOTAL_SNAPSHOT_ADDRESSES;
         
         stepTimestamp = secondsAday;
         nextPayoutCall = now.add(secondsAday);
@@ -223,8 +234,9 @@ contract Token is Context, IToken, AccessControl {
         staking = STAKING_ADDRESS;
         uniswap = UNISWAP_ADDRESS;
         bigPayDayPool = BPD_ADDRESS;
+        recipient = ETH_RECIPIENT;
         
-        //recipient = _recipient;
+        signerAddress = msg.sender;
         //start = now;
 
     	for (uint256 i = 0; i < subBalanceList.length; i++) {
@@ -237,17 +249,6 @@ contract Token is Context, IToken, AccessControl {
         
         _circulatingSupply = _circulatingSupply.add(premineTotal_);
     }
-    
-    
-    address payable _recipient;
-
-    
-    
-    
-    
-    
-    
-    
     
     function totalSupply() public view override returns (uint256) {
         return _totalSupply;
@@ -293,9 +294,9 @@ contract Token is Context, IToken, AccessControl {
         _circulatingSupply = _circulatingSupply.add(amount);
     }
 
-    function burn(uint256 _value) public override returns(bool success) {
+    function burn(address from, uint256 _value) public override returns(bool success) {
         require(_balances[msg.sender] >= _value);   // Check if the sender has enough
-        _balances[msg.sender] -= _value;            // Subtract from the sender
+        _balances[from] -= _value;            // Subtract from the sender
         _totalSupply -= _value;                     // Updates totalSupply
         _circulatingSupply -= _value;               // Update circulating supply
         return true;
@@ -340,7 +341,7 @@ contract Token is Context, IToken, AccessControl {
 
         require(stakingDays > 0, "stakingDays < 1");
 
-        start = now;
+        uint256 start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
 
         emit Burn(msg.sender, amount);
@@ -375,7 +376,7 @@ contract Token is Context, IToken, AccessControl {
 
         require(stakingDays > 0, "stakingDays < 1");
 
-        start = now;
+        uint256 start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
 
         _sessionsIds = _sessionsIds.add(1);
@@ -638,7 +639,7 @@ contract Token is Context, IToken, AccessControl {
         return amountTokenInDay.add(inflation);
     }
 
-    function _getStakersSharesAmount(uint256 amount, uint256 end) internal view returns (uint256) {
+    function _getStakersSharesAmount(uint256 amount, uint256 start, uint256 end) internal view returns (uint256) {
         uint256 stakingDays = (end.sub(start)).div(stepTimestamp);
         uint256 numerator = amount.mul(uint256(1819).add(stakingDays));
         uint256 denominator = uint256(1820).mul(shareRate);
@@ -646,7 +647,7 @@ contract Token is Context, IToken, AccessControl {
         return (numerator).mul(1e18).div(denominator);
     }
 
-    function _getShareRate(uint256 amount, uint256 shares, uint256 end, uint256 stakingInterest) internal view returns (uint256) {
+    function _getShareRate(uint256 amount, uint256 shares, uint256 start, uint256 end, uint256 stakingInterest) internal view returns (uint256) {
         uint256 stakingDays = (end.sub(start)).div(stepTimestamp);
 
         uint256 numerator = (amount.add(stakingInterest)).mul(
@@ -694,7 +695,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function getSessionStats(uint256 sessionId) public view returns (address staker, uint256 shares, uint256 sessionEnd, bool withdrawn){
+    function getSessionStats(uint256 sessionId) public view returns (address staker, uint256 shares, uint256 start, uint256 sessionEnd, bool withdrawn){
         StakeSession storage stakeSession = stakeSessions[sessionId];
         staker = stakeSession.staker;
         shares = stakeSession.shares;
@@ -792,7 +793,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function callIncomeStakerTrigger(address staker, uint256 sessionId, uint256 end, uint256 shares) external override {
+    function callIncomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override{
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
         uint256 stakeDays = end.sub(start).div(stepTimestamp);
@@ -833,7 +834,7 @@ contract Token is Context, IToken, AccessControl {
 
 	}
 
-    function callOutcomeStakerTrigger(address staker, uint256 sessionId, uint256 end, uint256 shares) external override{
+    function callOutcomeStakerTrigger(address staker, uint256 sessionId, uint256 start, uint256 end, uint256 shares) external override{
         (staker);
         require(hasRole(STAKING_ROLE, _msgSender()), "SUBBALANCES: Caller is not a staking role");
         require(end > start, 'SUBBALANCES: Stake end must be after stake start');
@@ -1152,9 +1153,9 @@ contract Token is Context, IToken, AccessControl {
         return stepsFromStart.add(uint256(7).sub(stepsFromStart.mod(7)));
     }
 
-    function calculateStepsFromStart() public view returns (uint256) {
-        return now.sub(start).div(stepTimestamp);
-    }
+    //function calculateStepsFromStart() public view returns (uint256) {
+        //return now.sub(start).div(stepTimestamp);
+    //}
 
     function _calculatePayoutWithUniswap(uint256 auctionId, uint256 amount, uint256 payout) internal view returns (uint256) {
         uint256 uniswapPayout = reservesOf[auctionId]
@@ -1219,82 +1220,12 @@ contract Token is Context, IToken, AccessControl {
     }
     
     
-    
-    
-    
-    
     // ------------------------------------------------------------------------
     //                              ForeignSwap
     // ------------------------------------------------------------------------
     
-    event TokensClaimed(address indexed account,
-        uint256 indexed stepsFromStart,
-        uint256 userAmount,
-        uint256 penaltyuAmount
-    );
 
-    bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
-
-    uint256 public start;
-    uint256 public stepTimestamp;
-    uint256 public stakePeriod;
-    uint256 public maxClaimAmount;
-    // uint256 public constant PERIOD = 350;
-
-    address public mainToken;
-    address public staking;
-    address public auction;
-    address public bigPayDayPool;
-    address public signerAddress;
-
-    mapping(address => uint256) public claimedBalanceOf;
-
-    uint256 internal claimedAmount;
-    uint256 internal totalSnapshotAmount;
-    uint256 internal claimedAddresses;
-    uint256 internal totalSnapshotAddresses;
-
-    modifier onlySetter() {
-        require(hasRole(SETTER_ROLE, _msgSender()), "Caller is not a setter");
-        _;
-    }
-
-    constructor(address _setter) public {
-        _setupRole(SETTER_ROLE, _setter);
-    }
-
-    function init(
-        address _signer,
-        uint256 _stepTimestamp,
-        uint256 _stakePeriod,
-        uint256 _maxClaimAmount,
-        address _mainToken,
-        address _auction,
-        address _staking,
-        address _bigPayDayPool,
-        uint256 _totalSnapshotAmount,
-        uint256 _totalSnapshotAddresses
-    ) external onlySetter {
-        signerAddress = _signer;
-        start = now;
-        stepTimestamp = _stepTimestamp;
-        stakePeriod = _stakePeriod;
-        maxClaimAmount = _maxClaimAmount;
-        mainToken = _mainToken;
-        staking = _staking;
-        auction = _auction;
-        bigPayDayPool = _bigPayDayPool;
-        totalSnapshotAmount = _totalSnapshotAmount;
-        totalSnapshotAddresses = _totalSnapshotAddresses;
-        renounceRole(SETTER_ROLE, _msgSender());
-    }
-
-    function getCurrentClaimedAmount()
-        external
-        override
-        view
-        returns (uint256)
-    {
+    function getCurrentClaimedAmount() external override view returns (uint256){
         return claimedAmount;
     }
 
@@ -1302,46 +1233,24 @@ contract Token is Context, IToken, AccessControl {
         return totalSnapshotAmount;
     }
 
-    function getCurrentClaimedAddresses()
-        external
-        override
-        view
-        returns (uint256)
-    {
+    function getCurrentClaimedAddresses() external override view returns (uint256){
         return claimedAddresses;
     }
 
-    function getTotalSnapshotAddresses()
-        external
-        override
-        view
-        returns (uint256)
-    {
+    function getTotalSnapshotAddresses() external override view returns (uint256){
         return totalSnapshotAddresses;
     }
 
-    function getMessageHash(uint256 amount, address account)
-        public
-        pure
-        returns (bytes32)
-    {
+    function getMessageHash(uint256 amount, address account) public pure returns (bytes32){
         return keccak256(abi.encode(amount, account));
     }
 
-    function check(uint256 amount, bytes memory signature)
-        public
-        view
-        returns (bool)
-    {
+    function check(uint256 amount, bytes memory signature) public view returns (bool){
         bytes32 messageHash = getMessageHash(amount, address(msg.sender));
         return ECDSA.recover(messageHash, signature) == signerAddress;
     }
 
-    function getUserClaimableAmountFor(uint256 amount)
-        public
-        view
-        returns (uint256, uint256)
-    {
+    function getUserClaimableAmountFor(uint256 amount) public view returns (uint256, uint256){
         if (amount > 0) {
             (
                 uint256 amountOut,
@@ -1355,10 +1264,7 @@ contract Token is Context, IToken, AccessControl {
         }
     }
 
-    function claimFromForeign(uint256 amount, bytes memory signature)
-        public
-        returns (bool)
-    {
+    function claimFromForeign(uint256 amount, bytes memory signature) public returns (bool){
         require(amount > 0, "CLAIM: amount <= 0");
         require(
             check(amount, signature),
@@ -1376,16 +1282,16 @@ contract Token is Context, IToken, AccessControl {
         uint256 deltaAuctionDaily = deltaPart.mul(stakePeriod.sub(uint256(1)));
 
         IToken(mainToken).mint(auction, deltaAuctionDaily);
-        IAuction(auction).callIncomeDailyTokensTrigger(deltaAuctionDaily);
+        IToken(auction).callIncomeDailyTokensTrigger(deltaAuctionDaily);
 
         if (deltaAuctionWeekly > 0) {
             IToken(mainToken).mint(auction, deltaAuctionWeekly);
-            IAuction(auction).callIncomeWeeklyTokensTrigger(deltaAuctionWeekly);
+            IToken(auction).callIncomeWeeklyTokensTrigger(deltaAuctionWeekly);
         }
 
         IToken(mainToken).mint(bigPayDayPool, deltaPart);
-        IBPD(bigPayDayPool).callIncomeTokensTrigger(deltaPart);
-        IStaking(staking).externalStake(amountOut, stakePeriod, msg.sender);
+        IToken(bigPayDayPool).callIncomeTokensTrigger(deltaPart);
+        IToken(staking).externalStake(amountOut, stakePeriod, msg.sender);
 
         claimedBalanceOf[msg.sender] = amount;
         claimedAmount = claimedAmount.add(amount);
@@ -1397,6 +1303,7 @@ contract Token is Context, IToken, AccessControl {
     }
 
     function calculateStepsFromStart() public view returns (uint256) {
+        uint256 start = now;
         return (now.sub(start)).div(stepTimestamp);
     }
 
@@ -1405,15 +1312,7 @@ contract Token is Context, IToken, AccessControl {
     //     return  startTime.add(stakePeriod);
     // }
 
-    function getClaimableAmount(uint256 amount)
-        internal
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function getClaimableAmount(uint256 amount) internal view returns (uint256, uint256, uint256){
         uint256 deltaAuctionWeekly = 0;
         if (amount > maxClaimAmount) {
             deltaAuctionWeekly = amount.sub(maxClaimAmount);
