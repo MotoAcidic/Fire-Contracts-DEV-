@@ -431,6 +431,11 @@
 						"internalType": "uint256",
 						"name": "_stake",
 						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stakingDays",
+						"type": "uint256"
 					}
 				],
 				"name": "createStake",
@@ -900,7 +905,7 @@
 						"_stakeholder": "The stakeholder to calculate rewards for."
 					}
 				},
-				"createStake(uint256)": {
+				"createStake(uint256,uint256)": {
 					"params": {
 						"_stake": "The size of the stake to be created."
 					}
@@ -979,7 +984,7 @@
 				"calculateReward(address)": {
 					"notice": "A simple method that calculates the rewards for each stakeholder."
 				},
-				"createStake(uint256)": {
+				"createStake(uint256,uint256)": {
 					"notice": "A method for a stakeholder to create a stake."
 				},
 				"distributeRewards()": {
@@ -1070,11 +1075,11 @@
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0xd756a26b191061e3ac150c5f4ae1669edcd27dedaf72245a3084ba75f9bd194a",
+			"keccak256": "0x324f3656bb24e61f4dbecbccd4909486ad107db2bd35a7da767575f4c11342a6",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://b54094a83e8c9847fd6ed9e87ccaea67ec4f941d3c3356bd3204872fa001a425",
-				"dweb:/ipfs/QmdBrg2HkQaNX4Rtr62kSnMH3QaQpAaPRnBvJdiVQydYMs"
+				"bzz-raw://1e419ac284555da97879f124f80d7c4c949856d17de66f04d44dca3a2de97d58",
+				"dweb:/ipfs/QmeEMgRgdcNx1Uz6r5kihpD1xUPVSkV8wRgyxhNtHtXY9U"
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/interfaces/IFIRE.sol": {

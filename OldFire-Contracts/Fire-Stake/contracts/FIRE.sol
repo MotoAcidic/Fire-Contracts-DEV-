@@ -79,10 +79,13 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     address[] internal stakeholders;
     address internal contractOwner = msg.sender;
     
+    // Time based variables
+    uint256 unlockTime;
     uint256 private constant WEEKS = 50;
     uint256 internal constant DAYS = WEEKS * 7;
     uint256 private constant START_DAY = 1;
     uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
+    uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
@@ -92,8 +95,19 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
+    mapping(address => StakeData[]) StakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
+    
+    //address[] public StakeAccounts;
+    
+    struct StakeData { 
+        address staker;
+        uint256 amount; 
+        uint256 start; 
+        uint256 end;
+    }
+    
     
     constructor() public {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -234,12 +248,33 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
      * @notice A method for a stakeholder to create a stake.
      * @param _stake The size of the stake to be created.
      */
-    function createStake(uint256 _stake) public {
-        
+    function createStake(uint256 _stake, uint256 stakingDays) public {
+        require(stakingDays > 0, "stakingDays < 1");
         emit Burn(msg.sender, _stake);
+        
+        // Set the time it takes to unstake
+        unlockTime = now.add(stakingDays.mul(secondsAday));
+        
+        // Save the staking params to the struct and array
+         StakeParams[msg.sender].push(StakeData({
+             staker: msg.sender,
+             amount: _stake,
+             start: now,
+             end: unlockTime
+         }));
+        
+        //Add the staker to the stake array
+
+        
+        
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
         stakes[msg.sender] = stakes[msg.sender].add(_stake);
     }
+    
+    //function returnStaker(address) public returns (StakeData){
+        //return StakeParams[msg.sender][1].staker;
+       // return StakeData[].staker;
+   // }
 
     /**
      * @notice A method for a stakeholder to remove a stake.
