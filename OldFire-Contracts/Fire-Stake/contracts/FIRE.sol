@@ -76,7 +76,6 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     uint256  _circulatingSupply = 0; //Set to 0 at start
 
     address _owner;
-    address[] internal stakeholders;
     address internal contractOwner = msg.sender;
     
     // Time based variables
@@ -95,11 +94,12 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
-    mapping(address => StakeData[]) StakeParams; 
+    mapping(address => StakeData) StakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
     
-    //address[] public StakeAccounts;
+    address[] internal stakeholders;
+    address[] public userAddress;
     
     struct StakeData { 
         address staker;
@@ -256,25 +256,29 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
         // Save the staking params to the struct and array
-         StakeParams[msg.sender].push(StakeData({
-             staker: msg.sender,
-             amount: _stake,
-             start: now,
-             end: unlockTime
-         }));
+         //StakeParams[msg.sender].push(StakeData({
+           //  staker: msg.sender,
+            // amount: _stake,
+            // start: now,
+            // end: unlockTime
+        // }));
+        
+        StakeParams[msg.sender].staker = msg.sender;
+        StakeParams[msg.sender].amount = _stake;
+        StakeParams[msg.sender].start = now;
+        StakeParams[msg.sender].end = unlockTime;
+        
+        userAddress.push(msg.sender);
         
         //Add the staker to the stake array
-
-        
         
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
         stakes[msg.sender] = stakes[msg.sender].add(_stake);
     }
     
-    //function returnStaker(address) public returns (StakeData){
-        //return StakeParams[msg.sender][1].staker;
-       // return StakeData[].staker;
-   // }
+    function returnStakers() public view returns (stakedata[] address){
+            return userAddress;
+    }
 
     /**
      * @notice A method for a stakeholder to remove a stake.

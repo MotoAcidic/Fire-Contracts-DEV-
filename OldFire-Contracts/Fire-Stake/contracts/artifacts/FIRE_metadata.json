@@ -680,6 +680,19 @@
 				"type": "function"
 			},
 			{
+				"inputs": [],
+				"name": "returnStakers",
+				"outputs": [
+					{
+						"internalType": "address[]",
+						"name": "",
+						"type": "address[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "bytes32",
@@ -856,6 +869,25 @@
 					}
 				],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "userAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -1075,11 +1107,11 @@
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x324f3656bb24e61f4dbecbccd4909486ad107db2bd35a7da767575f4c11342a6",
+			"keccak256": "0xb5d704ef8032f32a46e66cbe2609aaac74255d20d9e51e29537f016561825dd1",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://1e419ac284555da97879f124f80d7c4c949856d17de66f04d44dca3a2de97d58",
-				"dweb:/ipfs/QmeEMgRgdcNx1Uz6r5kihpD1xUPVSkV8wRgyxhNtHtXY9U"
+				"bzz-raw://70de17417943eab2a9b2ddd5571581fc2e1de77c54909256fe8970081fc9a6b3",
+				"dweb:/ipfs/QmSRMkDpVfBk9zfpqSLKf6cHc42tCDdeTcHmVb9NgDWvcL"
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/interfaces/IFIRE.sol": {
