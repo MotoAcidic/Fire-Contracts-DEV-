@@ -86,6 +86,9 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
+    
+    uint256 internal constant _interestBaseRate = 6; //6%
+    
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
     event Transfer(address indexed from, address indexed to, uint tokens);
@@ -94,19 +97,21 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
-    mapping(address => StakeData) StakeParams; 
+    mapping(address => stakeData) stakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
     
     address[] internal stakeholders;
-    address[] public userAddress;
     
-    struct StakeData { 
+    struct stakeData { 
         address staker;
         uint256 amount; 
         uint256 start; 
         uint256 end;
+        uint256 interest;
     }
+    
+    //StakeData[] StakeParams;
     
     
     constructor() public {
@@ -156,7 +161,7 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     // ------------------------------------------------------------------------
     //                              Premine Functions
     // ------------------------------------------------------------------------
-
+    /*
     function contractPremine() public view returns (uint256) { return contractPremine_; }
     function teamPremine() public view returns (uint256) { return teamPremine_; }
     function devPayment() public view returns (uint256) { return devPayment_; }
@@ -165,7 +170,7 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     function xapPremine() public view returns (uint256) { return xapPremine_; }
     function xxxPremine() public view returns (uint256) { return xxxPremine_; }
     function beezPremine() public view returns (uint256) { return beezPremine_; }
-    
+    */
     function mint(address account, uint256 amount) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
         _circulatingSupply = _circulatingSupply.add(amount);
@@ -248,37 +253,44 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
      * @notice A method for a stakeholder to create a stake.
      * @param _stake The size of the stake to be created.
      */
-    function createStake(uint256 _stake, uint256 stakingDays) public {
+    function createStake(uint256 _stake, uint stakingDays) public {
         require(stakingDays > 0, "stakingDays < 1");
         emit Burn(msg.sender, _stake);
         
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
-        // Save the staking params to the struct and array
-         //StakeParams[msg.sender].push(StakeData({
-           //  staker: msg.sender,
-            // amount: _stake,
-            // start: now,
-            // end: unlockTime
-        // }));
+        uint256 stakingInterest;
+        uint256 interestBaseRateCalc = _interestBaseRate.div(100);
+        uint256 ratio = 1 + interestBaseRateCalc.mul(unlockTime);
+
+        stakingInterest = _stake.mul(ratio);
         
-        StakeParams[msg.sender].staker = msg.sender;
-        StakeParams[msg.sender].amount = _stake;
-        StakeParams[msg.sender].start = now;
-        StakeParams[msg.sender].end = unlockTime;
+        // Save the staking params to the struct
+       stakeData memory stakeData_ = stakeData({
+            staker: msg.sender,
+            amount: _stake,
+            start: now,
+            end: unlockTime,
+            interest: stakingInterest
+        });
         
-        userAddress.push(msg.sender);
+        stakeParams[msg.sender] = stakeData_;
         
         //Add the staker to the stake array
-        
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
         stakes[msg.sender] = stakes[msg.sender].add(_stake);
     }
+   
     
-    function returnStakers() public view returns (stakedata[] address){
-            return userAddress;
+    function returnStakerInfo(address account) public view returns (address staker, uint256 amount, uint256 start, uint256 end, uint256 interest){
+            return (stakeParams[account].staker,
+                    stakeParams[account].amount,
+                    stakeParams[account].start,
+                    stakeParams[account].end,
+                    stakeParams[account].interest);
     }
+    
 
     /**
      * @notice A method for a stakeholder to remove a stake.
@@ -295,9 +307,9 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
      * @param _stakeholder The stakeholder to retrieve the stake for.
      * @return uint256 The amount of wei staked.
      */
-    function stakeOf(address _stakeholder) public view returns(uint256) {
-        return stakes[_stakeholder];
-    }
+    //function stakeOf(address _stakeholder) public view returns(uint256) {
+      //  return stakes[_stakeholder];
+    //}
 
     /**
      * @notice A method to the aggregated stakes from all stakeholders.
@@ -349,10 +361,72 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
 
     // ---------- REWARDS ----------
     
-    /**
-     * @notice A method to allow a stakeholder to check his rewards.
-     * @param _stakeholder The stakeholder to check rewards for.
+     /*
+    function calculateStakingInterest(address account) public view returns (uint256 amount, uint256 end) {
+        uint256 stakingInterest;
+        uint256 ratio = 1 + _interestBaseRate.mul(stakeParams[account].end);
+
+        stakingInterest = stakeParams[account].amount.mul(ratio);
+
+        return stakingInterest;
+    }
+    */
+    /*
+    function getAmountOutAndPenalty(uint256 sessionId, uint256 stakingInterest) public view returns (uint256, uint256){
+        uint256 stakingDays = (
+            sessionDataOf[msg.sender][sessionId].end.sub(
+                sessionDataOf[msg.sender][sessionId].start
+            )
+        )
+            .div(stepTimestamp);
+
+        uint256 daysStaked = (
+            now.sub(sessionDataOf[msg.sender][sessionId].start)
+        )
+            .div(stepTimestamp);
+
+        uint256 amountAndInterest = sessionDataOf[msg.sender][sessionId]
+            .amount
+            .add(stakingInterest);
+
+        // Early
+        if (stakingDays > daysStaked) {
+            uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(
+                stakingDays
+            );
+
+            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+
+            return (payOutAmount, earlyUnstakePenalty);
+            // In time
+        } else if (
+            stakingDays <= daysStaked && daysStaked < stakingDays.add(14)
+        ) {
+            return (amountAndInterest, 0);
+            // Late
+        } else if (
+            stakingDays.add(14) <= daysStaked &&
+            daysStaked < stakingDays.add(714)
+        ) {
+            uint256 daysAfterStaking = daysStaked.sub(stakingDays);
+
+            uint256 payOutAmount = amountAndInterest
+                .mul(uint256(714).sub(daysAfterStaking))
+                .div(700);
+
+            uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
+
+            return (payOutAmount, lateUnstakePenalty);
+            // Nothing
+        } else if (stakingDays.add(714) <= daysStaked) {
+            return (0, amountAndInterest);
+        }
+
+        return (0, 0);
+    }
+     
      */
+     
     function rewardOf(address _stakeholder) public view returns(uint256) {
         return rewards[_stakeholder];
     }
