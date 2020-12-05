@@ -37,36 +37,7 @@ abstract contract DEX {
 
 }
 
-contract SwapParams {
-    
-    // 5.25 million coins for swap of old chains
-    uint256 premineTotal_ = 10250000e18; // 10.25m coins total on launch
-    uint256 contractPremine_ = 5000000e18; // 5m coins
-    uint256 devPayment_ = 250000e18; // 250k coins
-    uint256 teamPremine_ = 500000e18; // 500k coins
-    uint256 abetPremine_ = 2250000e18; // 2.25m coin
-    uint256 becnPremine_ = 1750000e18; // 1.75m coin
-    uint256 xapPremine_ = 500000e18; // 500k coin
-    uint256 xxxPremine_ = 250000e18; // 250k coin
-    uint256 beezPremine_ = 250000e18; // 250k coin
-    
-    address teamAddrs = TEAM_ADDRS;
-    address devAddrs = DEV_ADDRS;
-    address abetAddrs = ABET_ADDRS;
-    address becnAddrs = BECN_ADDRS;
-    address xapAddrs = XAP_ADDRS;
-    address xxxAddrs = XXX_ADDRS;
-    address beezAddrs = BEEZ_ADDRS;
-    address internal constant DEV_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
-    address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant ABET_ADDRS = 0x0C8a92f170BaF855d3965BA8554771f673Ed69a6;
-    address internal constant BECN_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant XAP_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant XXX_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant BEEZ_ADDRS = 0x96C418fFc085107aE72127FE70574754ae3D7047;
-}
-
-contract FIRE is Context, IFIRE, AccessControl, SwapParams {
+contract FIRE is Context, IFIRE, AccessControl {
     using SafeMath for uint256;
 
     string internal constant name = "Fire Network";
@@ -78,6 +49,16 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     address _owner;
     address internal contractOwner = msg.sender;
     
+    uint256 premineTotal_ = 10250000e18; // 10.25m coins total on launch
+    uint256 contractPremine_ = 5000000e18; // 5m coins
+    uint256 devPayment_ = 250000e18; // 250k coins
+    uint256 teamPremine_ = 500000e18; // 500k coins
+    
+    address teamAddrs = TEAM_ADDRS;
+    address devAddrs = DEV_ADDRS;
+    address internal constant DEV_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
+    address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
+    
     // Time based variables
     uint256 unlockTime;
     uint256 private constant WEEKS = 50;
@@ -87,7 +68,7 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
-    uint256 internal constant _interestBaseRate = 6; //6%
+    uint256 internal constant _interestBaseRate = 600; //6% 600 basis points
     
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
@@ -121,21 +102,11 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
     mint(DEV_ADDRS, devPayment_);
     mint(msg.sender, contractPremine_);
     mint(TEAM_ADDRS, teamPremine_);
-    mint(ABET_ADDRS, abetPremine_);
-    mint(BECN_ADDRS, becnPremine_);
-    mint(XAP_ADDRS, xapPremine_);
-    mint(XXX_ADDRS, xxxPremine_);
-    mint(BEEZ_ADDRS, beezPremine_);
 
     _circulatingSupply = _circulatingSupply.add(premineTotal_);
     emit Transfer(address(0), DEV_ADDRS, devPayment_);
     emit Transfer(address(0), msg.sender, contractPremine_);
     emit Transfer(address(0), TEAM_ADDRS, teamPremine_);
-    emit Transfer(address(0), ABET_ADDRS, abetPremine_);
-    emit Transfer(address(0), BECN_ADDRS, becnPremine_);
-    emit Transfer(address(0), XAP_ADDRS, xapPremine_);
-    emit Transfer(address(0), XXX_ADDRS, xxxPremine_);
-    emit Transfer(address(0), BEEZ_ADDRS, beezPremine_);
     }
     
     // ------------------------------------------------------------------------
@@ -154,9 +125,6 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant burner role.");
         grantRole(BURNER_ROLE, account);
     }
-
-
-
 
     // ------------------------------------------------------------------------
     //                              Premine Functions
@@ -261,11 +229,18 @@ contract FIRE is Context, IFIRE, AccessControl, SwapParams {
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
         uint256 stakingInterest;
-        uint256 interestBaseRateCalc = _interestBaseRate.div(100);
-        uint256 ratio = 1 + interestBaseRateCalc.mul(unlockTime);
+        /*
+        uint256 interestBaseRateCalc; 
+        uint256 ratio;
+        uint256 interest;
 
-        stakingInterest = _stake.mul(ratio);
-        
+        interestBaseRateCalc = _interestBaseRate.div(100);
+        ratio = 1 + interestBaseRateCalc.mul(unlockTime);
+        interest = _stake.mul(ratio);
+        stakingInterest = interest;
+        */
+        //stakingInterest = _stake.mul(_interestBaseRate).div(unlockTime);
+        stakingInterest = _stake * _interestBaseRate / 10000;
         // Save the staking params to the struct
        stakeData memory stakeData_ = stakeData({
             staker: msg.sender,
