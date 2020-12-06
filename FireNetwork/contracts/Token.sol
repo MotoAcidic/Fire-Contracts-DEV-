@@ -97,10 +97,6 @@ contract Token is Context, IToken, AccessControl {
     uint256 internal claimedAddresses;
     uint256 internal totalSnapshotAddresses;
     
-    //uint256 private constant WEEKS = 50;
-    //uint256 internal constant DAYS = WEEKS * 7;
-    //uint256 private constant START_DAY = 1;
-    //uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     uint256 public constant PERCENT_DENOMINATOR = 100;

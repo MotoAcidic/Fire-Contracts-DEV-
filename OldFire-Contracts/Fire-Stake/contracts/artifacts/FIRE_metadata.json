@@ -221,6 +221,24 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "_stake",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "stakingDays",
+						"type": "uint256"
+					}
+				],
+				"name": "aaTestStake",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "address",
 						"name": "_stakeholder",
 						"type": "address"
@@ -296,6 +314,30 @@
 					}
 				],
 				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "a",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "b",
+						"type": "uint256"
+					}
+				],
+				"name": "bankersRoundedDiv",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "pure",
 				"type": "function"
 			},
 			{
@@ -816,6 +858,13 @@
 						"_stakeholder": "The stakeholder to add."
 					}
 				},
+				"bankersRoundedDiv(uint256,uint256)": {
+					"details": "bankersRoundedDiv method that is used to divide and round the result  (AKA round-half-to-even) Bankers Rounding is an algorithm for rounding quantities to integers,  in which numbers which are equidistant from  the two nearest integers are rounded to the nearest even integer.  Thus, 0.5 rounds down to 0; 1.5 rounds up to 2.  Other decimal fractions round as you would expect--0.4 to 0, 0.6 to 1, 1.4 to 1, 1.6 to 2, etc.  Only x.5 numbers get the \"special\" treatment.",
+					"params": {
+						"a": "What to divide",
+						"b": "Divide by this number"
+					}
+				},
 				"calculateReward(address)": {
 					"params": {
 						"_stakeholder": "The stakeholder to calculate rewards for."
@@ -972,11 +1021,11 @@
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x940428cdb194fb244d59e5cf13a17352f1b47acbb75c59031252e3dfe8b9d8b5",
+			"keccak256": "0x687cee2bf93898418d393f5552f5e9d8ff0bea4552ac24c72ee7e89a568f256b",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://027f5ed9f2b777653924db1f18b650253694f871675d4642b4fce6dc10171b1a",
-				"dweb:/ipfs/QmNRQrzzKCGRNSbbC2SABakHFcStGM6Lu3d1BpVi8SsEHK"
+				"bzz-raw://ddd9a2a5b3f972945edc1ad9b5c984d0a150e60b89ac476c71f59bd6d57e0573",
+				"dweb:/ipfs/QmYzo6nUPNZrnJbzi8EPUkjGFjNdFAnD77AhmUFVuUusnp"
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/interfaces/IFIRE.sol": {

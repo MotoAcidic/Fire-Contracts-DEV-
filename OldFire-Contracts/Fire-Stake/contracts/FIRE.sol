@@ -10,6 +10,8 @@ import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contr
 
 
 
+
+
 abstract contract DEX {
     
     event Bought(uint256 amount);
@@ -39,7 +41,7 @@ abstract contract DEX {
 
 contract FIRE is Context, IFIRE, AccessControl {
     using SafeMath for uint256;
-
+   
     string internal constant name = "Fire Network";
     string internal constant symbol = "FIRE";
     uint8 internal constant decimals = 18;
@@ -64,11 +66,12 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 private constant WEEKS = 50;
     uint256 internal constant DAYS = WEEKS * 7;
     uint256 private constant START_DAY = 1;
+    uint256 internal constant days_year = 365;
     uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
-    uint256 internal constant _interestBaseRate = 600; //6% 600 basis points
+    uint256 internal constant _interestBaseRate = 600; //6%
     
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
@@ -85,7 +88,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     address[] internal stakeholders;
     
     struct stakeData { 
-        address staker;
+        address account;
         uint256 amount; 
         uint256 start; 
         uint256 end;
@@ -129,16 +132,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     // ------------------------------------------------------------------------
     //                              Premine Functions
     // ------------------------------------------------------------------------
-    /*
-    function contractPremine() public view returns (uint256) { return contractPremine_; }
-    function teamPremine() public view returns (uint256) { return teamPremine_; }
-    function devPayment() public view returns (uint256) { return devPayment_; }
-    function abetPremine() public view returns (uint256) { return abetPremine_; }
-    function becnPremine() public view returns (uint256) { return becnPremine_; }
-    function xapPremine() public view returns (uint256) { return xapPremine_; }
-    function xxxPremine() public view returns (uint256) { return xxxPremine_; }
-    function beezPremine() public view returns (uint256) { return beezPremine_; }
-    */
+
     function mint(address account, uint256 amount) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
         _circulatingSupply = _circulatingSupply.add(amount);
@@ -224,26 +218,23 @@ contract FIRE is Context, IFIRE, AccessControl {
     function createStake(uint256 _stake, uint stakingDays) public {
         require(stakingDays > 0, "stakingDays < 1");
         emit Burn(msg.sender, _stake);
-        
+
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
         uint256 stakingInterest;
-        /*
-        uint256 interestBaseRateCalc; 
-        uint256 ratio;
-        uint256 interest;
-
-        interestBaseRateCalc = _interestBaseRate.div(100);
-        ratio = 1 + interestBaseRateCalc.mul(unlockTime);
-        interest = _stake.mul(ratio);
-        stakingInterest = interest;
-        */
-        //stakingInterest = _stake.mul(_interestBaseRate).div(unlockTime);
-        stakingInterest = _stake * _interestBaseRate / 10000;
+        uint256 stakingInterestCalc;
+        uint256 stakingDaysCalc;
+        stakingDaysCalc = bankersRoundedDiv(days_year, stakingDays);
+        //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
+        
+        //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
+        stakingInterestCalc = _stake.mul(_interestBaseRate).div(10000);
+        stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
+        
         // Save the staking params to the struct
        stakeData memory stakeData_ = stakeData({
-            staker: msg.sender,
+            account: msg.sender,
             amount: _stake,
             start: now,
             end: unlockTime,
@@ -256,16 +247,43 @@ contract FIRE is Context, IFIRE, AccessControl {
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
         stakes[msg.sender] = stakes[msg.sender].add(_stake);
     }
+    
+    function aaTestStake (uint256 _stake, uint stakingDays) public {
+
+        // Set the time it takes to unstake
+        unlockTime = now.add(stakingDays.mul(secondsAday));
+        
+        uint256 stakingInterest;
+        uint256 stakingInterestCalc;
+        uint256 stakingDaysCalc;
+        stakingDaysCalc = bankersRoundedDiv(days_year, stakingDays);
+        //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
+        
+        //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
+        stakingInterestCalc = _stake.mul(_interestBaseRate).div(10000);
+        stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
+        
+        // Save the staking params to the struct
+       stakeData memory stakeData_ = stakeData({
+            account: msg.sender,
+            amount: _stake,
+            start: now,
+            end: unlockTime,
+            interest: stakingInterest
+        });
+        
+        stakeParams[msg.sender] = stakeData_;
+ 
+    }
    
     
-    function returnStakerInfo(address account) public view returns (address staker, uint256 amount, uint256 start, uint256 end, uint256 interest){
-            return (stakeParams[account].staker,
+    function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 start, uint256 end, uint256 interest){
+            return (stakeParams[account].account,
                     stakeParams[account].amount,
                     stakeParams[account].start,
                     stakeParams[account].end,
                     stakeParams[account].interest);
     }
-    
 
     /**
      * @notice A method for a stakeholder to remove a stake.
@@ -277,14 +295,6 @@ contract FIRE is Context, IFIRE, AccessControl {
         mint(msg.sender, _stake);
     }
 
-    /**
-     * @notice A method to retrieve the stake for a stakeholder.
-     * @param _stakeholder The stakeholder to retrieve the stake for.
-     * @return uint256 The amount of wei staked.
-     */
-    //function stakeOf(address _stakeholder) public view returns(uint256) {
-      //  return stakes[_stakeholder];
-    //}
 
     /**
      * @notice A method to the aggregated stakes from all stakeholders.
@@ -335,32 +345,22 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     // ---------- REWARDS ----------
+
     
-     /*
-    function calculateStakingInterest(address account) public view returns (uint256 amount, uint256 end) {
-        uint256 stakingInterest;
-        uint256 ratio = 1 + _interestBaseRate.mul(stakeParams[account].end);
-
-        stakingInterest = stakeParams[account].amount.mul(ratio);
-
-        return stakingInterest;
-    }
-    */
-    /*
-    function getAmountOutAndPenalty(uint256 sessionId, uint256 stakingInterest) public view returns (uint256, uint256){
+    function getAmountOutAndPenalty(uint256 account, uint256 stakingInterest) public view returns (uint256){
         uint256 stakingDays = (
-            sessionDataOf[msg.sender][sessionId].end.sub(
-                sessionDataOf[msg.sender][sessionId].start
+            stakeParams[msg.sender].end.sub(
+                stakeParams[msg.sender].start
             )
         )
-            .div(stepTimestamp);
+            .div(blocksAday);
 
         uint256 daysStaked = (
-            now.sub(sessionDataOf[msg.sender][sessionId].start)
+            now.sub(stakeParams[msg.sender].start)
         )
-            .div(stepTimestamp);
+            .div(blocksAday);
 
-        uint256 amountAndInterest = sessionDataOf[msg.sender][sessionId]
+        uint256 amountAndInterest = stakeParams[msg.sender]
             .amount
             .add(stakingInterest);
 
@@ -370,14 +370,14 @@ contract FIRE is Context, IFIRE, AccessControl {
                 stakingDays
             );
 
-            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 earlyUnstakePenalty = amountAndInterest;
 
-            return (payOutAmount, earlyUnstakePenalty);
+            return earlyUnstakePenalty;
             // In time
         } else if (
             stakingDays <= daysStaked && daysStaked < stakingDays.add(14)
         ) {
-            return (amountAndInterest, 0);
+            return (amountAndInterest);
             // Late
         } else if (
             stakingDays.add(14) <= daysStaked &&
@@ -399,8 +399,6 @@ contract FIRE is Context, IFIRE, AccessControl {
 
         return (0, 0);
     }
-     
-     */
      
     function rewardOf(address _stakeholder) public view returns(uint256) {
         return rewards[_stakeholder];
@@ -445,6 +443,50 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 reward = rewards[msg.sender];
         rewards[msg.sender] = 0;
         mint(msg.sender, reward);
+    }
+    
+        /**
+     * @dev bankersRoundedDiv method that is used to divide and round the result 
+     * (AKA round-half-to-even)
+     *
+     * Bankers Rounding is an algorithm for rounding quantities to integers, 
+     * in which numbers which are equidistant from 
+     * the two nearest integers are rounded to the nearest even integer. 
+     *
+     * Thus, 0.5 rounds down to 0; 1.5 rounds up to 2. 
+     * Other decimal fractions round as you would expect--0.4 to 0, 0.6 to 1, 1.4 to 1, 1.6 to 2, etc. 
+     * Only x.5 numbers get the "special" treatment.
+     * @param a What to divide
+     * @param b Divide by this number
+     */
+    function bankersRoundedDiv(uint256 a, uint256 b) public pure returns (uint256) {
+        require(b > 0, "div by 0"); 
+
+        uint256 halfB = 0;
+        if ((b % 2) == 1) {
+            halfB = (b / 2) + 1;
+        } else {
+            halfB = b / 2;
+        }
+        bool roundUp = ((a % b) >= halfB);
+
+        // now check if we are in the center!
+        bool isCenter = ((a % b) == (b / 2));
+        bool isDownEven = (((a / b) % 2) == 0);
+
+        // select the rounding type
+        if (isCenter) {
+            // only in this case we rounding either DOWN or UP 
+            // depending on what number is even 
+            roundUp = !isDownEven;
+        }
+
+        // round
+        if (roundUp) {
+            return ((a / b) + 1);
+        }else{
+            return (a / b);
+        }
     }
     
 }
