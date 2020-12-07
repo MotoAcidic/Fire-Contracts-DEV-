@@ -92,7 +92,9 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 start; 
         uint256 end;
         uint256 interest;
+        //uint256 session;
     }
+    
     
     //StakeData[] StakeParams;
     
@@ -246,31 +248,22 @@ contract FIRE is Context, IFIRE, AccessControl {
         stakes[msg.sender] = stakes[msg.sender].add(_stake);
     }
     
-    function aaTestStake (uint256 _stake, uint stakingDays) public {
+    function aaTest (address account) public view returns (uint256, uint256, uint256, uint256){
 
-        // Set the time it takes to unstake
-        unlockTime = now.add(stakingDays.mul(secondsAday));
+        //uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
+        //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
+        uint256 stakingDays = stakeParams[account].end.sub(stakeParams[account].start).div(60).div(60).div(24);
+        uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
+        uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
+        if (daysStaked < 1){
+            daysStaked.add(1);
+        }
+        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
         
-        uint256 stakingInterest;
-        uint256 stakingInterestCalc;
-        uint256 stakingDaysCalc;
-        stakingDaysCalc = roundedDiv(days_year, stakingDays);
-        //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
-        
-        //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
-        stakingInterestCalc = _stake.mul(_interestBaseRate).div(10000);
-        stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
-        
-        // Save the staking params to the struct
-       stakeData memory stakeData_ = stakeData({
-            account: msg.sender,
-            amount: _stake,
-            start: now,
-            end: unlockTime,
-            interest: stakingInterest
-        });
-        
-        stakeParams[msg.sender] = stakeData_;
+        return (stakingDays,
+                daysStakedCalc,
+                daysStaked,
+                amountAndInterest);
  
     }
    
@@ -293,7 +286,42 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 claimedAmount = claimableAmount(msg.sender);
         mint(msg.sender, claimedAmount);
     }
+    
+    function claimableAmount(address account) public view returns (uint256){
+        
+        uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
+        uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
+        uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
+        uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
+        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
 
+        // Early
+        if (stakingDays > daysStaked) {
+            uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
+            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
+
+            return amountClaimed;
+            // In time
+        } else if (stakingDays <= daysStaked && daysStaked < stakingDays.add(14)) {
+            return amountAndInterest;
+            
+            // Late
+        } else if (stakingDays.add(14) <= daysStaked && daysStaked < stakingDays.add(714)) {
+            uint256 daysAfterStaking = daysStaked.sub(stakingDays);
+            uint256 payOutAmount = amountAndInterest.mul(uint256(714).sub(daysAfterStaking)).div(700);
+            uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 amountClaimed = payOutAmount.sub(lateUnstakePenalty);
+
+            return amountClaimed;
+            // Nothing
+        } else if (stakingDays.add(714) <= daysStaked) {
+            return amountAndInterest;
+        }
+
+        return 0;
+        
+    }
 
     /**
      * @notice A method to the aggregated stakes from all stakeholders.
@@ -344,40 +372,6 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     // ---------- REWARDS ----------
-    
-    function claimableAmount(address account) public view returns (uint256){
-        
-        uint256 stakingDays = (stakeParams[account].end.sub(stakeParams[account].start)).div(blocksAday);
-        uint256 daysStaked = (now.sub(stakeParams[msg.sender].start)).div(blocksAday);
-        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
-
-        // Early
-        if (stakingDays > daysStaked) {
-            uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
-            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
-            uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
-
-            return amountClaimed;
-            // In time
-        } else if (stakingDays <= daysStaked && daysStaked < stakingDays.add(14)) {
-            return amountAndInterest;
-            
-            // Late
-        } else if (stakingDays.add(14) <= daysStaked && daysStaked < stakingDays.add(714)) {
-            uint256 daysAfterStaking = daysStaked.sub(stakingDays);
-            uint256 payOutAmount = amountAndInterest.mul(uint256(714).sub(daysAfterStaking)).div(700);
-            uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
-            uint256 amountClaimed = payOutAmount.sub(lateUnstakePenalty);
-
-            return amountClaimed;
-            // Nothing
-        } else if (stakingDays.add(714) <= daysStaked) {
-            return amountAndInterest;
-        }
-
-        return 0;
-        
-    }
      
     function rewardOf(address _stakeholder) public view returns(uint256) {
         return rewards[_stakeholder];
