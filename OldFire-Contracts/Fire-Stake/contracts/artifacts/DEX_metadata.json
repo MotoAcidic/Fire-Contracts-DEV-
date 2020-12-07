@@ -133,11 +133,11 @@
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x687cee2bf93898418d393f5552f5e9d8ff0bea4552ac24c72ee7e89a568f256b",
+			"keccak256": "0x2c00414ab1703483c6f83b98ff04c44b48d5dda3abe86b4a54d3e0dcbc37e4ad",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://ddd9a2a5b3f972945edc1ad9b5c984d0a150e60b89ac476c71f59bd6d57e0573",
-				"dweb:/ipfs/QmYzo6nUPNZrnJbzi8EPUkjGFjNdFAnD77AhmUFVuUusnp"
+				"bzz-raw://11456b780deaccb241bc15da9082890323c04d50f8a046b8188334f9f594c5f8",
+				"dweb:/ipfs/QmQZ1wSjjGJ5CDnDTQoXLwLAF6UHs7ofZo8rUTTyJYkqWR"
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/interfaces/IFIRE.sol": {

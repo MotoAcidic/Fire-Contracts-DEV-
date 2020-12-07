@@ -67,7 +67,6 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant DAYS = WEEKS * 7;
     uint256 private constant START_DAY = 1;
     uint256 internal constant days_year = 365;
-    uint256 internal constant BIG_PAY_DAY = WEEKS + 1;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
@@ -225,15 +224,14 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 stakingInterest;
         uint256 stakingInterestCalc;
         uint256 stakingDaysCalc;
-        stakingDaysCalc = bankersRoundedDiv(days_year, stakingDays);
+        stakingDaysCalc = roundedDiv(days_year, stakingDays);
         //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
         
         //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
         stakingInterestCalc = _stake.mul(_interestBaseRate).div(10000);
         stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
-        
-        // Save the staking params to the struct
-       stakeData memory stakeData_ = stakeData({
+
+        stakeData memory stakeData_ = stakeData({
             account: msg.sender,
             amount: _stake,
             start: now,
@@ -256,7 +254,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 stakingInterest;
         uint256 stakingInterestCalc;
         uint256 stakingDaysCalc;
-        stakingDaysCalc = bankersRoundedDiv(days_year, stakingDays);
+        stakingDaysCalc = roundedDiv(days_year, stakingDays);
         //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
         
         //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
@@ -278,11 +276,11 @@ contract FIRE is Context, IFIRE, AccessControl {
    
     
     function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 start, uint256 end, uint256 interest){
-            return (stakeParams[account].account,
-                    stakeParams[account].amount,
-                    stakeParams[account].start,
-                    stakeParams[account].end,
-                    stakeParams[account].interest);
+            return (stakeParams[stakerAccount].account,
+                    stakeParams[stakerAccount].amount,
+                    stakeParams[stakerAccount].start,
+                    stakeParams[stakerAccount].end,
+                    stakeParams[stakerAccount].interest);
     }
 
     /**
@@ -292,7 +290,8 @@ contract FIRE is Context, IFIRE, AccessControl {
     function removeStake(uint256 _stake) public {
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
         if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
-        mint(msg.sender, _stake);
+        uint256 claimedAmount = claimableAmount(msg.sender);
+        mint(msg.sender, claimedAmount);
     }
 
 
@@ -345,59 +344,39 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     // ---------- REWARDS ----------
-
     
-    function getAmountOutAndPenalty(uint256 account, uint256 stakingInterest) public view returns (uint256){
-        uint256 stakingDays = (
-            stakeParams[msg.sender].end.sub(
-                stakeParams[msg.sender].start
-            )
-        )
-            .div(blocksAday);
-
-        uint256 daysStaked = (
-            now.sub(stakeParams[msg.sender].start)
-        )
-            .div(blocksAday);
-
-        uint256 amountAndInterest = stakeParams[msg.sender]
-            .amount
-            .add(stakingInterest);
+    function claimableAmount(address account) public view returns (uint256){
+        
+        uint256 stakingDays = (stakeParams[account].end.sub(stakeParams[account].start)).div(blocksAday);
+        uint256 daysStaked = (now.sub(stakeParams[msg.sender].start)).div(blocksAday);
+        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
 
         // Early
         if (stakingDays > daysStaked) {
-            uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(
-                stakingDays
-            );
+            uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
+            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
 
-            uint256 earlyUnstakePenalty = amountAndInterest;
-
-            return earlyUnstakePenalty;
+            return amountClaimed;
             // In time
-        } else if (
-            stakingDays <= daysStaked && daysStaked < stakingDays.add(14)
-        ) {
-            return (amountAndInterest);
+        } else if (stakingDays <= daysStaked && daysStaked < stakingDays.add(14)) {
+            return amountAndInterest;
+            
             // Late
-        } else if (
-            stakingDays.add(14) <= daysStaked &&
-            daysStaked < stakingDays.add(714)
-        ) {
+        } else if (stakingDays.add(14) <= daysStaked && daysStaked < stakingDays.add(714)) {
             uint256 daysAfterStaking = daysStaked.sub(stakingDays);
-
-            uint256 payOutAmount = amountAndInterest
-                .mul(uint256(714).sub(daysAfterStaking))
-                .div(700);
-
+            uint256 payOutAmount = amountAndInterest.mul(uint256(714).sub(daysAfterStaking)).div(700);
             uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 amountClaimed = payOutAmount.sub(lateUnstakePenalty);
 
-            return (payOutAmount, lateUnstakePenalty);
+            return amountClaimed;
             // Nothing
         } else if (stakingDays.add(714) <= daysStaked) {
-            return (0, amountAndInterest);
+            return amountAndInterest;
         }
 
-        return (0, 0);
+        return 0;
+        
     }
      
     function rewardOf(address _stakeholder) public view returns(uint256) {
@@ -487,6 +466,19 @@ contract FIRE is Context, IFIRE, AccessControl {
         }else{
             return (a / b);
         }
+    }
+    
+     /**
+     * @dev Division, round to nearest integer (AKA round-half-up)
+     * @param a What to divide
+     * @param b Divide by this number
+     */
+    function roundedDiv(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity automatically throws, but please emit reason
+        require(b > 0, "div by 0"); 
+
+        uint256 halfB = (b % 2 == 0) ? (b / 2) : (b / 2 + 1);
+        return (a % b >= halfB) ? (a / b + 1) : (a / b);
     }
     
 }
