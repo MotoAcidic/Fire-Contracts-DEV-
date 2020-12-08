@@ -71,11 +71,12 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
     uint256 internal constant _interestBaseRate = 600; //6%
-    
+    uint256 private _sessionsIds;
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Sent(address from, address to, uint amount);
+    event stake(address indexed account, uint256 indexed sessionId, uint256 amount, uint256 start, uint256 end);
     
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
@@ -83,6 +84,8 @@ contract FIRE is Context, IFIRE, AccessControl {
     mapping(address => stakeData) stakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
+    mapping(address => uint256[]) public sessionsOf;
+    mapping(uint256 => stakeData) sessionStakeData;
     
     address[] internal stakeholders;
     
@@ -92,7 +95,14 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 start; 
         uint256 end;
         uint256 interest;
-        //uint256 session;
+        uint256 session;
+    }
+    
+    struct Session { 
+        uint256 amount; 
+        uint256 start; 
+        uint256 end;
+        
     }
     
     
@@ -212,68 +222,93 @@ contract FIRE is Context, IFIRE, AccessControl {
 
     // ---------- STAKES ----------
 
-    /**
+
+     
+    function sessionsOf_(address account) external view returns (uint256[] memory){
+        return sessionsOf[account];
+    }
+    
+     /**
      * @notice A method for a stakeholder to create a stake.
-     * @param _stake The size of the stake to be created.
+     * @param amount The size of the stake to be created.
      */
-    function createStake(uint256 _stake, uint stakingDays) public {
+    function createStake(uint256 amount, uint256 stakingDays) public {
         require(stakingDays > 0, "stakingDays < 1");
-        emit Burn(msg.sender, _stake);
+        emit Burn(msg.sender, amount);
 
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
+        uint256 sessionId = _sessionsIds;
         uint256 stakingInterest;
         uint256 stakingInterestCalc;
         uint256 stakingDaysCalc;
+        _sessionsIds = _sessionsIds.add(1);
         stakingDaysCalc = roundedDiv(days_year, stakingDays);
         //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
         
         //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
-        stakingInterestCalc = _stake.mul(_interestBaseRate).div(10000);
+        stakingInterestCalc = amount.mul(_interestBaseRate).div(10000);
         stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
 
         stakeData memory stakeData_ = stakeData({
             account: msg.sender,
-            amount: _stake,
+            amount: amount,
+            session: sessionId,
             start: now,
             end: unlockTime,
             interest: stakingInterest
         });
+        sessionsOf[msg.sender].push(sessionId);
         
         stakeParams[msg.sender] = stakeData_;
+        sessionStakeData[sessionId] = stakeData_;
         
+        emit stake(msg.sender, sessionId, amount, now, unlockTime);
         //Add the staker to the stake array
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
-        stakes[msg.sender] = stakes[msg.sender].add(_stake);
+        stakes[msg.sender] = stakes[msg.sender].add(amount);
     }
     
-    function aaTest (address account) public view returns (uint256, uint256, uint256, uint256){
+    function aaTest (uint256 sessionID) public view returns (uint256, uint256, uint256, uint256){
 
-        //uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
+        //uint256 stakingDaysCalc = (stakeParams[sessionID].end.sub(stakeParams[sessionID].start)); //.div(blocksAday);
         //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
-        uint256 stakingDays = stakeParams[account].end.sub(stakeParams[account].start).div(60).div(60).div(24);
-        uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
-        uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
-        if (daysStaked < 1){
-            daysStaked.add(1);
-        }
-        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
+        uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
+        uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
+        //uint256 daysStaked = now.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        //uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
+
+        uint256 amountAndInterest = sessionStakeData[sessionID].amount.add(sessionStakeData[sessionID].interest);
         
         return (stakingDays,
-                daysStakedCalc,
-                daysStaked,
+                timeStaked,
+                timeForFullReward,
+                //daysStaked,
                 amountAndInterest);
  
     }
    
     
-    function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 start, uint256 end, uint256 interest){
+    function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
             return (stakeParams[stakerAccount].account,
                     stakeParams[stakerAccount].amount,
+                    stakeParams[stakerAccount].session,
                     stakeParams[stakerAccount].start,
                     stakeParams[stakerAccount].end,
-                    stakeParams[stakerAccount].interest);
+                    stakeParams[stakerAccount].interest
+                    );
+    }
+    
+    function returnSessionInfo(uint256 sessionID) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
+            return (sessionStakeData[sessionID].account,
+                    sessionStakeData[sessionID].amount,
+                    sessionStakeData[sessionID].session,
+                    sessionStakeData[sessionID].start,
+                    sessionStakeData[sessionID].end,
+                    sessionStakeData[sessionID].interest
+                    );
     }
 
     /**
@@ -287,23 +322,27 @@ contract FIRE is Context, IFIRE, AccessControl {
         mint(msg.sender, claimedAmount);
     }
     
-    function claimableAmount(address account) public view returns (uint256){
+    function claimableAmount(uint256 sessionID) public view returns (uint256){
         
-        uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
-        uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
-        uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
-        uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
+        //uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
+        //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
+        //uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
+        //uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
         uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
+        
+        uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
+        uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
 
         // Early
-        if (stakingDays > daysStaked) {
+        if (timeStaked > timeForFullReward) {
             uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
             uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
             uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
 
             return amountClaimed;
             // In time
-        } else if (stakingDays <= daysStaked && daysStaked < stakingDays.add(14)) {
+        } else if (timeForFullReward <= timeStaked && timeStaked < timeStaked.add(secondsAday.mul(14))) {
             return amountAndInterest;
             
             // Late

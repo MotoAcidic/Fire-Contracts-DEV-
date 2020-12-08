@@ -2453,27 +2453,25 @@
 			]
 		},
 		"https://github.com/Uniswap/uniswap-v2-periphery/contracts/interfaces/IUniswapV2Router01.sol": {
-			"keccak256": "0x2698329f35127559498658df11c438943f02c3e5bae5635689795019947dec54",
-			"license": "MIT",
+			"keccak256": "0x8a3c5c449d4b7cd76513ed6995f4b86e4a86f222c770f8442f5fc128ce29b4d2",
 			"urls": [
-				"bzz-raw://0316ab50a9e7e14f9b46df16b9fd29c5e5fd67f15ee3a944b501b60f5bb24d77",
-				"dweb:/ipfs/QmRYXcwSPhBGGtwDxJ3MFASkPvSMceXNWicVBT6yEeAdun"
+				"bzz-raw://1df63ca373dafae3bd0ee7fe70f890a1dc7c45ed869c01de68413e0e97ff9deb",
+				"dweb:/ipfs/QmefJgEYGUL8KX7kQKYTrDweF8GB7yjy3nw5Bmqzryg7PG"
 			]
 		},
 		"https://github.com/Uniswap/uniswap-v2-periphery/contracts/interfaces/IUniswapV2Router02.sol": {
-			"keccak256": "0x5587f172bf56ac4435d970e05b16aec3e28323fb3aea3e4f5f568537bbbf7d3f",
-			"license": "MIT",
+			"keccak256": "0x744e30c133bd0f7ca9e7163433cf6d72f45c6bb1508c2c9c02f1a6db796ae59d",
 			"urls": [
-				"bzz-raw://6ca13b38e435e197709eb1e3f449c68543e20e18aa5456f21af4185fb916efbe",
-				"dweb:/ipfs/QmWwmMwFtjLh9jggHqJPuYk4jvGLyJzSQG9Kvj2Asi35v9"
+				"bzz-raw://9bf2f4454ad63d4cff03a0630e787d9e8a9deed80aec89682cd8ad6379d9ef8c",
+				"dweb:/ipfs/Qme51hQNR2wpax7ooUadhtqLtXm8ffeVVYyubLkTT4wMCG"
 			]
 		},
 		"localhost/FireNetwork/contracts/Token.sol": {
-			"keccak256": "0x2a418fef2ab1896e5b42950781bc9aeb836773a688c6edd5b3f10ef39c1fe2b0",
+			"keccak256": "0x5e83d615d561746683f1f61256a5d5a8228f852542e012bca31e754c99325063",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://d982ca167e8a04d5295330b7623af750debff0ae8f947324149302af1d8f3ba9",
-				"dweb:/ipfs/QmX1fBRma62wjXexJTNByAjqarZDkFmY2hMLFyApgjboMh"
+				"bzz-raw://de37a50b1811f8b4b86755b86a04ee5af6528c5b7fedb6e80b65f63deb57f678",
+				"dweb:/ipfs/QmRHo76NdYUpmtMQ4xcbPFqaUm6JeuHSeVftVSZgRv7iGp"
 			]
 		},
 		"localhost/FireNetwork/contracts/interfaces/IToken.sol": {

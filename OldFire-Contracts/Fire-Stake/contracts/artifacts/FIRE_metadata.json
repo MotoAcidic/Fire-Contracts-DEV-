@@ -180,6 +180,43 @@
 				"type": "event"
 			},
 			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "sessionId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "start",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "end",
+						"type": "uint256"
+					}
+				],
+				"name": "stake",
+				"type": "event"
+			},
+			{
 				"inputs": [],
 				"name": "BURNER_ROLE",
 				"outputs": [
@@ -221,9 +258,9 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address",
-						"name": "account",
-						"type": "address"
+						"internalType": "uint256",
+						"name": "sessionID",
+						"type": "uint256"
 					}
 				],
 				"name": "aaTest",
@@ -454,7 +491,7 @@
 				"inputs": [
 					{
 						"internalType": "uint256",
-						"name": "_stake",
+						"name": "amount",
 						"type": "uint256"
 					},
 					{
@@ -694,6 +731,50 @@
 			{
 				"inputs": [
 					{
+						"internalType": "uint256",
+						"name": "sessionID",
+						"type": "uint256"
+					}
+				],
+				"name": "returnSessionInfo",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "session",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "start",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "end",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "interest",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
 						"internalType": "address",
 						"name": "stakerAccount",
 						"type": "address"
@@ -709,6 +790,11 @@
 					{
 						"internalType": "uint256",
 						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "session",
 						"type": "uint256"
 					},
 					{
@@ -783,6 +869,49 @@
 				"name": "send",
 				"outputs": [],
 				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "sessionsOf",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					}
+				],
+				"name": "sessionsOf_",
+				"outputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
 				"type": "function"
 			},
 			{
@@ -907,7 +1036,7 @@
 				},
 				"createStake(uint256,uint256)": {
 					"params": {
-						"_stake": "The size of the stake to be created."
+						"amount": "The size of the stake to be created."
 					}
 				},
 				"getRoleAdmin(bytes32)": {
@@ -1056,11 +1185,11 @@
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x73b4fc34bdd19f38e7947dac89c10a4c1e870feb07969352c4dc24e1c1a5a99b",
+			"keccak256": "0x196e691a7520cf03cd541fbaf75c0740ab69984c20f8ec68127e7728f6032be2",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://fde0c8f75a2f785c2df62707bc6b826f16325809ab3cc63fa506d6b0fb1cdbed",
-				"dweb:/ipfs/QmWgJuo3zbADHAj9DT8cQH5FB6p5uLXCpHMzkfXEt7p6Kg"
+				"bzz-raw://37706d61a5df5d54da36193dab4503790b1c43b7ec6adde22de01a20e7774fb1",
+				"dweb:/ipfs/QmdMAnrqqKmDV9rcdALYezsp5rfGcJgDR2jP3PuHVhAWNU"
 			]
 		},
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/interfaces/IFIRE.sol": {
