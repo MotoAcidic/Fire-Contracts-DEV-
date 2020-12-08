@@ -2,15 +2,11 @@
 
 pragma solidity ^0.6.0;
 
-import "./interfaces/IFIRE.sol";
+import "./IFIRE.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol";
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol";
-
-
-
-
 
 abstract contract DEX {
     
@@ -84,7 +80,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     mapping(address => stakeData) stakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
-    mapping(address => uint256[]) public sessionsOf;
+    //mapping(address => uint256[]) public sessionsOf;
     mapping(uint256 => stakeData) sessionStakeData;
     
     address[] internal stakeholders;
@@ -224,9 +220,9 @@ contract FIRE is Context, IFIRE, AccessControl {
 
 
      
-    function sessionsOf_(address account) external view returns (uint256[] memory){
-        return sessionsOf[account];
-    }
+    //function sessionsOf_(address account) external view returns (uint256[] memory){
+    //    return sessionsOf[account];
+    //}
     
      /**
      * @notice A method for a stakeholder to create a stake.
@@ -259,7 +255,7 @@ contract FIRE is Context, IFIRE, AccessControl {
             end: unlockTime,
             interest: stakingInterest
         });
-        sessionsOf[msg.sender].push(sessionId);
+        //sessionsOf[msg.sender].push(sessionId);
         
         stakeParams[msg.sender] = stakeData_;
         sessionStakeData[sessionId] = stakeData_;
@@ -315,10 +311,10 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @notice A method for a stakeholder to remove a stake.
      * @param _stake The size of the stake to be removed.
      */
-    function removeStake(uint256 _stake) public {
+    function removeStake(uint256 _stake, uint256 sessionID) public {
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
         if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
-        uint256 claimedAmount = claimableAmount(msg.sender);
+        uint256 claimedAmount = claimableAmount(sessionID);
         mint(msg.sender, claimedAmount);
     }
     
@@ -328,11 +324,13 @@ contract FIRE is Context, IFIRE, AccessControl {
         //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
         //uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
         //uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
+        uint256 daysStaked = now.sub(stakeParams[msg.sender].start).div(60).div(60).div(24);
         uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
         
         uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
         uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
         uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
+        require(timeStaked > secondsAday); // Stake must be at least 1 day old
 
         // Early
         if (timeStaked > timeForFullReward) {
