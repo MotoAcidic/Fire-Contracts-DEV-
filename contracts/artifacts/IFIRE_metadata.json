@@ -124,19 +124,6 @@
 			},
 			{
 				"inputs": [],
-				"name": "circulatingSupply",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
 				"name": "totalSupply",
 				"outputs": [
 					{
@@ -230,11 +217,11 @@
 	},
 	"sources": {
 		"localhost/OldFire-Contracts/Fire-Stake/contracts/IFIRE.sol": {
-			"keccak256": "0x2b2af70c3da6ebd4a1c0efac03a0ce7ca953162a66153240d66067a61f1aca40",
+			"keccak256": "0xa863285c2d9d6d2f9958d958c4e476c7389c403d728ba15a13d4295a08d1736a",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://769694aed703fc4715bf2b9046b4681c84db40df0246c0b49e80f647155f63a9",
-				"dweb:/ipfs/QmUzfmbLPwpdmYMyRZnE4EYCHTdZYh4CWyUDVtFvGuJmfb"
+				"bzz-raw://7557f71532d6e1e7383a88d35582963828a3e5c9fb2964e28870230120f7bbe6",
+				"dweb:/ipfs/QmSJfWJb5g3E5ZEJGBtNjg8GQ7qxtRMZ9LDovB8ZBvuUe2"
 			]
 		}
 	},

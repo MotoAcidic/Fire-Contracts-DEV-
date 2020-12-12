@@ -41,8 +41,8 @@ contract FIRE is Context, IFIRE, AccessControl {
     string internal constant name = "Fire Network";
     string internal constant symbol = "FIRE";
     uint8 internal constant decimals = 18;
-    uint256 internal _totalSupply = 21000000e18; //21m
-    uint256 internal _circulatingSupply = 0; //Set to 0 at start
+    uint256 internal _totalSupply = 0;
+    uint256 public maxSupply = 21000000e18; //21m
     uint256 internal _stakingSupply = 0;
     uint256 internal _bigPayoutThreshold = 100000000; // 1m coins from early end stakes
     uint256 public bigPayoutPool = 500;
@@ -115,10 +115,15 @@ contract FIRE is Context, IFIRE, AccessControl {
     mint(msg.sender, contractPremine_);
     mint(TEAM_ADDRS, teamPremine_);
 
-    _circulatingSupply = _circulatingSupply.add(premineTotal_);
+    _totalSupply = _totalSupply.add(premineTotal_);
     emit Transfer(address(0), DEV_ADDRS, devPayment_);
     emit Transfer(address(0), msg.sender, contractPremine_);
     emit Transfer(address(0), TEAM_ADDRS, teamPremine_);
+    }
+    
+    modifier canPoSMint() {
+        require(_totalSupply < maxSupply);
+        _;
     }
     
     // ------------------------------------------------------------------------
@@ -140,17 +145,28 @@ contract FIRE is Context, IFIRE, AccessControl {
 
     function mint(address account, uint256 amount) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
-        _circulatingSupply = _circulatingSupply.add(amount);
+        _totalSupply = _totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
+    }
+
+    function mintReward() internal canPoSMint returns (bool){
+        if(_balances[msg.sender] <= 0) return false;
+        uint256 senderID = stakeParams[msg.sender].session;
+        uint reward = claimableAmount(senderID);
+        
+        if(reward <= 0) return false;
+        
+        _totalSupply = _totalSupply.add(reward);
+        
+        _balances[msg.sender] = _balances[msg.sender].add(reward);
+
+        emit Transfer(address(0), msg.sender, reward);
+        return true;
     }
     
     function totalSupply() public override view returns (uint256) {
         return _totalSupply;
-    }
-    
-    function circulatingSupply() public override view returns (uint256) {
-        return _circulatingSupply;
     }
 
     function balanceOf(address tokenOwner) public override view returns (uint256) {
@@ -260,10 +276,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         return (sessionId);
     }
     
-    /**
-     * @notice A method to distribute rewards to all stakeholders.
-     */
-    function distributeRewards() public {
+    function distributeBigPayout() public {
         require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
         for (uint256 s = 0; s < stakeholders.length; s += 1){
             address stakeholder = stakeholders[s];
@@ -300,28 +313,21 @@ contract FIRE is Context, IFIRE, AccessControl {
             stakeholders.pop();
         } 
     }
-    /*
-    function aaTest (uint256 sessionID) public view returns (uint256, uint256, uint256, uint256){
+    
+   
+    function aaTest (uint256 _stake, uint256 sessionID) public {
+        require(sessionStakeData[sessionID].account == msg.sender && stakeParams[msg.sender].amount == _stake);
+        stakes[msg.sender] = stakes[msg.sender].sub(_stake);
+        //uint256 claimedAmount = claimableAmount(sessionID);
 
-        //uint256 stakingDaysCalc = (stakeParams[sessionID].end.sub(stakeParams[sessionID].start)); //.div(blocksAday);
-        //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
-        uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
-        uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
-        uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
-        //uint256 daysStaked = now.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
-        //uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
-
-        uint256 amountAndInterest = sessionStakeData[sessionID].amount.add(sessionStakeData[sessionID].interest);
-        
-        return (stakingDays,
-                timeStaked,
-                timeForFullReward,
-                //daysStaked,
-                amountAndInterest);
- 
+        delete sessionStakeData[sessionID];
+        _stakingSupply.sub(sessionStakeData[sessionID].amount);
+        if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
+        _initPayout(msg.sender, _stake);
+        //mint(msg.sender, claimedAmount);
     }
    
-    
+     /*
     function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
             return (stakeParams[stakerAccount].account,
                     stakeParams[stakerAccount].amount,
@@ -349,7 +355,7 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @param _stake The size of the stake to be removed.
      */
     function removeStake(uint256 _stake, uint256 sessionID) public {
-        require(sessionStakeData[sessionID].account == msg.sender && stakeParams[msg.sender].amount == _stake);
+        
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
         uint256 claimedAmount = claimableAmount(sessionID);
 
