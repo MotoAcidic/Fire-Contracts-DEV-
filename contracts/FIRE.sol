@@ -74,10 +74,13 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant _interestBaseRate = 600; //6% x 100
     uint256 private _sessionsIds;
 
-    event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
+   /* This notifies clients about the amount burnt */
+    event Burn(address indexed from, uint256 value);
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Sent(address from, address to, uint amount);
     event stake(address indexed account, uint256 indexed sessionId, uint256 amount, uint256 start, uint256 end);
+    event FrozenFunds(address target, bool frozen);
+    event Mint(address indexed _address, uint _reward);
     
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
@@ -87,6 +90,9 @@ contract FIRE is Context, IFIRE, AccessControl {
     
     mapping(address => stakeData) stakeParams;
     mapping(uint256 => stakeData) sessionStakeData;
+    
+    mapping (address => bool) public frozenAccount;
+    
     
     address[] internal stakeholders;
     
@@ -110,6 +116,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(MINTER_ROLE, msg.sender);
     _setupRole(SETTER_ROLE, msg.sender);
+    _setupRole(MR_FREEZE_ROLE, msg.sender);
     
     mint(DEV_ADDRS, devPayment_);
     mint(msg.sender, contractPremine_);
@@ -132,28 +139,45 @@ contract FIRE is Context, IFIRE, AccessControl {
     
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
+    bytes32 public constant MR_FREEZE_ROLE = keccak256("MR_FREEZE_ROLE");
     
     function grantMinerRole(address account) public{
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
         grantRole(MINTER_ROLE, account);
     }
     
+    function grantMrFreezeRole(address account) public{
+        require(hasRole(MR_FREEZE_ROLE, msg.sender), "Mr. Freeze can only grant his freeze abiltity to others..");
+        grantRole(MR_FREEZE_ROLE, account);
+    }
+    
     function grantSetterRole(address account) public{
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
         grantRole(MINTER_ROLE, account);
     }
+    
+    function freezeAccount(address target, bool freeze) public {
+        require(hasRole(MR_FREEZE_ROLE, msg.sender), "Only Mr. Freeze can freeze people silly.");
+        frozenAccount[target] = freeze;
+        FrozenFunds(target, freeze);
+    }
 
     function mint(address account, uint256 amount) public {
+        require(!frozenAccount[msg.sender]);
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
         _totalSupply = _totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
 
-    function mintReward() internal canPoSMint returns (bool){
+    function mintReward() internal canPoSMint returns (bool) {
+        require(!frozenAccount[msg.sender]);
         if(_balances[msg.sender] <= 0) return false;
         uint256 senderID = stakeParams[msg.sender].session;
-        uint reward = claimableAmount(senderID);
+        //uint reward = claimableAmount(senderID);
+        // Testing reward function Only
+        uint256 reward = stakeParams[msg.sender].amount;
+        delete sessionStakeData[senderID].session;
         
         if(reward <= 0) return false;
         
@@ -169,11 +193,12 @@ contract FIRE is Context, IFIRE, AccessControl {
         return _totalSupply;
     }
 
-    function balanceOf(address tokenOwner) public override view returns (uint256) {
-        return _balances[tokenOwner];
+    function balanceOf(address account) public override view returns (uint256) {
+        return _balances[account];
     }
     
     function send(address receiver, uint amount) public {
+        require(!frozenAccount[msg.sender]);
         require(amount <= _balances[msg.sender], "Insufficient balance.");
         _balances[msg.sender] -= amount;
         _balances[receiver] += amount;
@@ -181,6 +206,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     function transfer(address _toAddress, uint256 _amountOfTokens) public override returns (bool) {
+        require(!frozenAccount[msg.sender]);
         address _customerAddress = msg.sender;
         require(_amountOfTokens <= tokenBalanceLedger_[_customerAddress]);
 
@@ -201,6 +227,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     function transferFrom(address owner, address buyer, uint256 numTokens) public override returns (bool) {
+        require(!frozenAccount[msg.sender]);
         require(numTokens <= _balances[owner]);
         require(numTokens <= allowed[owner][msg.sender]);
         _balances[owner] = _balances[owner].sub(numTokens);
@@ -210,21 +237,25 @@ contract FIRE is Context, IFIRE, AccessControl {
         return true;
     }
     
-    function burn(uint256 _value) public returns (bool success) {
-        require(_balances[msg.sender] >= _value);   // Check if the sender has enough
-        _balances[msg.sender] -= _value;            // Subtract from the sender
-        _totalSupply -= _value;                      // Updates totalSupply
-        emit Burn(msg.sender, _value);
-        return true;
+    function burn(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
+        emit Transfer(account, address(0), amount);
     }
 
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    
     function burnFrom(address _from, uint256 _value) public returns(bool success) {
         require(_balances[_from] >= _value);                // Check if the targeted balance is enough
         require(_value <= allowed[_from][msg.sender]);    // Check allowance
         _balances[_from] -= _value;                         // Subtract from the targeted balance
         allowed[_from][msg.sender] -= _value;             // Subtract from the sender's allowance
         _totalSupply -= _value;                              // Update totalSupply
-        emit Burn(_from, _value);
+        burn(msg.sender, _value);
         return true;
     }
 
@@ -235,9 +266,16 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @param amount The size of the stake to be created.
      */
     function createStake(uint256 amount, uint256 stakingDays) public returns (uint256){
+        require(_balances[msg.sender] >= amount, "You can only stake what you own.");
         require(stakingDays > 0, "stakingDays < 1");
-        emit Burn(msg.sender, amount);
+        
+        //emit Burn(msg.sender, amount);
+        _beforeTokenTransfer(msg.sender, address(0), amount);
 
+        _balances[msg.sender] = _balances[msg.sender].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
+        emit Transfer(msg.sender, address(0), amount);
+        
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
@@ -273,10 +311,12 @@ contract FIRE is Context, IFIRE, AccessControl {
         stakes[msg.sender] = stakes[msg.sender].add(amount);
         
         emit stake(msg.sender, sessionId, amount, now, unlockTime);
+        
         return (sessionId);
     }
     
     function distributeBigPayout() public {
+        require(!frozenAccount[msg.sender]);
         require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
         for (uint256 s = 0; s < stakeholders.length; s += 1){
             address stakeholder = stakeholders[s];
@@ -355,7 +395,7 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @param _stake The size of the stake to be removed.
      */
     function removeStake(uint256 _stake, uint256 sessionID) public {
-        
+        require(!frozenAccount[msg.sender]);
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
         uint256 claimedAmount = claimableAmount(sessionID);
 
