@@ -41,8 +41,13 @@ contract FIRE is Context, IFIRE, AccessControl {
     string internal constant name = "Fire Network";
     string internal constant symbol = "FIRE";
     uint8 internal constant decimals = 18;
-    uint256  _totalSupply = 21000000e18; //21m
-    uint256  _circulatingSupply = 0; //Set to 0 at start
+    uint256 internal _totalSupply = 21000000e18; //21m
+    uint256 internal _circulatingSupply = 0; //Set to 0 at start
+    uint256 internal _stakingSupply = 0;
+    uint256 internal _bigPayoutThreshold = 100000000; // 1m coins from early end stakes
+    uint256 public bigPayoutPool = 500;
+    uint256 internal _unStakeGracePeriod = 14; // Amount in days
+    uint256 internal _maxUnstakePeriod = 365; // Amount in days
 
     address _owner;
     address internal contractOwner = msg.sender;
@@ -66,7 +71,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
-    uint256 internal constant _interestBaseRate = 600; //6%
+    uint256 internal constant _interestBaseRate = 600; //6% x 100
     uint256 private _sessionsIds;
 
     event Burn(address indexed from, uint256 value); // This notifies clients about the amount burnt
@@ -77,10 +82,10 @@ contract FIRE is Context, IFIRE, AccessControl {
     mapping(address => uint256) _balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
-    mapping(address => stakeData) stakeParams; 
     mapping(address => uint256) internal stakes;
     mapping(address => uint256) internal rewards;
-    //mapping(address => uint256[]) public sessionsOf;
+    
+    mapping(address => stakeData) stakeParams;
     mapping(uint256 => stakeData) sessionStakeData;
     
     address[] internal stakeholders;
@@ -101,13 +106,10 @@ contract FIRE is Context, IFIRE, AccessControl {
         
     }
     
-    
-    //StakeData[] StakeParams;
-    
-    
     constructor() public {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(MINTER_ROLE, msg.sender);
+    _setupRole(SETTER_ROLE, msg.sender);
     
     mint(DEV_ADDRS, devPayment_);
     mint(msg.sender, contractPremine_);
@@ -124,21 +126,17 @@ contract FIRE is Context, IFIRE, AccessControl {
     // ------------------------------------------------------------------------
     
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-
+    bytes32 public constant SETTER_ROLE = keccak256("SETTER_ROLE");
     
     function grantMinerRole(address account) public{
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
         grantRole(MINTER_ROLE, account);
     }
-    function grantBurnerRole(address account) public{
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant burner role.");
-        grantRole(BURNER_ROLE, account);
+    
+    function grantSetterRole(address account) public{
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Admin can only grant minter role.");
+        grantRole(MINTER_ROLE, account);
     }
-
-    // ------------------------------------------------------------------------
-    //                              Premine Functions
-    // ------------------------------------------------------------------------
 
     function mint(address account, uint256 amount) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
@@ -197,7 +195,6 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
     
     function burn(uint256 _value) public returns (bool success) {
-        require(hasRole(BURNER_ROLE, msg.sender), "Caller is not a burner");
         require(_balances[msg.sender] >= _value);   // Check if the sender has enough
         _balances[msg.sender] -= _value;            // Subtract from the sender
         _totalSupply -= _value;                      // Updates totalSupply
@@ -206,7 +203,6 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     function burnFrom(address _from, uint256 _value) public returns(bool success) {
-        require(hasRole(BURNER_ROLE, msg.sender), "Caller is not a burner");
         require(_balances[_from] >= _value);                // Check if the targeted balance is enough
         require(_value <= allowed[_from][msg.sender]);    // Check allowance
         _balances[_from] -= _value;                         // Subtract from the targeted balance
@@ -217,18 +213,12 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     // ---------- STAKES ----------
-
-
-     
-    //function sessionsOf_(address account) external view returns (uint256[] memory){
-    //    return sessionsOf[account];
-    //}
     
      /**
      * @notice A method for a stakeholder to create a stake.
      * @param amount The size of the stake to be created.
      */
-    function createStake(uint256 amount, uint256 stakingDays) public {
+    function createStake(uint256 amount, uint256 stakingDays) public returns (uint256){
         require(stakingDays > 0, "stakingDays < 1");
         emit Burn(msg.sender, amount);
 
@@ -255,17 +245,62 @@ contract FIRE is Context, IFIRE, AccessControl {
             end: unlockTime,
             interest: stakingInterest
         });
-        //sessionsOf[msg.sender].push(sessionId);
         
         stakeParams[msg.sender] = stakeData_;
         sessionStakeData[sessionId] = stakeData_;
         
-        emit stake(msg.sender, sessionId, amount, now, unlockTime);
-        //Add the staker to the stake array
+        //Increase staking supply
+        _stakingSupply.add(amount);
+        
+        //If user is not already in the stakes array add them for bpd payouts
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
         stakes[msg.sender] = stakes[msg.sender].add(amount);
+        
+        emit stake(msg.sender, sessionId, amount, now, unlockTime);
+        return (sessionId);
     }
     
+    /**
+     * @notice A method to distribute rewards to all stakeholders.
+     */
+    function distributeRewards() public {
+        require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
+        for (uint256 s = 0; s < stakeholders.length; s += 1){
+            address stakeholder = stakeholders[s];
+            uint256 reward = calculateBPD(stakeholder);
+            //rewards[stakeholder] = rewards[stakeholder].add(reward);
+            mint(stakeholder, reward);
+        }
+    }
+    
+    function calculateBPD(address account) public view returns(uint256) {
+        require(bigPayoutPool > 100, "Must be at least 100 tokens in payout pool to calculate");
+        uint256 rewardPercentage = roundedDiv(stakes[account], bigPayoutPool).mul(100);
+        uint256 reward = rewardPercentage.div(10000).mul(bigPayoutPool);
+        
+        return reward;
+    }
+    
+    function isStakeholder(address _address) public view returns(bool, uint256) {
+        for (uint256 s = 0; s < stakeholders.length; s += 1){
+            if (_address == stakeholders[s]) return (true, s);
+        }
+        return (false, 0);
+    }
+    
+    function addStakeholder(address _stakeholder) internal {
+        (bool _isStakeholder, ) = isStakeholder(_stakeholder);
+        if(!_isStakeholder) stakeholders.push(_stakeholder);
+    }
+
+    function removeStakeholder(address _stakeholder) internal {
+        (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
+        if(_isStakeholder){
+            stakeholders[s] = stakeholders[stakeholders.length - 1];
+            stakeholders.pop();
+        } 
+    }
+    /*
     function aaTest (uint256 sessionID) public view returns (uint256, uint256, uint256, uint256){
 
         //uint256 stakingDaysCalc = (stakeParams[sessionID].end.sub(stakeParams[sessionID].start)); //.div(blocksAday);
@@ -297,6 +332,8 @@ contract FIRE is Context, IFIRE, AccessControl {
                     );
     }
     
+    */
+    
     function returnSessionInfo(uint256 sessionID) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
             return (sessionStakeData[sessionID].account,
                     sessionStakeData[sessionID].amount,
@@ -312,52 +349,85 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @param _stake The size of the stake to be removed.
      */
     function removeStake(uint256 _stake, uint256 sessionID) public {
+        require(sessionStakeData[sessionID].account == msg.sender && stakeParams[msg.sender].amount == _stake);
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
-        if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
         uint256 claimedAmount = claimableAmount(sessionID);
-        mint(msg.sender, claimedAmount);
+
+        delete sessionStakeData[sessionID];
+        _stakingSupply.sub(sessionStakeData[sessionID].amount);
+        if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
+        _initPayout(msg.sender, claimedAmount);
+        //mint(msg.sender, claimedAmount);
+    }
+    
+    function _initPayout(address to, uint256 amount) internal {
+        mint(to, amount);
     }
     
     function claimableAmount(uint256 sessionID) public view returns (uint256){
+        require(now.sub(sessionStakeData[sessionID].start) > secondsAday, "You must have been staked for 1 full day first.");
         
-        //uint256 stakingDaysCalc = (stakeParams[account].end.sub(stakeParams[account].start)); //.div(blocksAday);
-        //uint256 stakingDays = roundedDiv(stakingDaysCalc, blocksAday);
-        //uint256 daysStakedCalc = now.sub(stakeParams[msg.sender].start); //.div(blocksAday);
-        //uint256 daysStaked = roundedDiv(daysStakedCalc, blocksAday);
-        uint256 daysStaked = now.sub(stakeParams[msg.sender].start).div(60).div(60).div(24);
-        uint256 amountAndInterest = stakeParams[msg.sender].amount.add(stakeParams[msg.sender].interest);
+        // ------------------------------------------------------------------------
+        //                             Time Based Calculations
+        // ------------------------------------------------------------------------
         
-        uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
         uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
+        uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        uint256 daysStaked = now.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
         uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
-        require(timeStaked > secondsAday); // Stake must be at least 1 day old
-
-        // Early
-        if (timeStaked > timeForFullReward) {
+        
+        uint256 amountAndInterest = sessionStakeData[sessionID].amount.add(sessionStakeData[sessionID].interest);
+        
+        // ------------------------------------------------------------------------
+        //                             Claimed to early
+        // ------------------------------------------------------------------------
+        
+        if (stakingDays > daysStaked) {
             uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
             uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
             uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
-
+            uint256 endEarlyStaked = amountAndInterest.sub(amountClaimed);
+            bigPayoutPool.add(endEarlyStaked);
             return amountClaimed;
-            // In time
-        } else if (timeForFullReward <= timeStaked && timeStaked < timeStaked.add(secondsAday.mul(14))) {
+            
+        // ------------------------------------------------------------------------
+        //              Claimed on time and under endStake grace period
+        // ------------------------------------------------------------------------
+        
+        } else if (timeForFullReward <= timeStaked && timeStaked < timeStaked.add(secondsAday.mul(_unStakeGracePeriod))) {
+            
             return amountAndInterest;
             
-            // Late
-        } else if (stakingDays.add(14) <= daysStaked && daysStaked < stakingDays.add(714)) {
+        // ------------------------------------------------------------------------
+        //             Claimed after endStake grace period with penalties
+        // ------------------------------------------------------------------------
+        
+        } else if (stakingDays.add(_unStakeGracePeriod) <= daysStaked && daysStaked < stakingDays.add(_maxUnstakePeriod)) {
             uint256 daysAfterStaking = daysStaked.sub(stakingDays);
-            uint256 payOutAmount = amountAndInterest.mul(uint256(714).sub(daysAfterStaking)).div(700);
+            uint256 payOutAmount = amountAndInterest.mul(uint256(_maxUnstakePeriod).sub(daysAfterStaking)).div(700);
             uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
             uint256 amountClaimed = payOutAmount.sub(lateUnstakePenalty);
 
             return amountClaimed;
-            // Nothing
-        } else if (stakingDays.add(714) <= daysStaked) {
+            
+        // ------------------------------------------------------------------------
+        //             Claimed to late all funds are moved to BPD pool
+        // ------------------------------------------------------------------------
+        
+        } else if (stakingDays.add(_maxUnstakePeriod) <= daysStaked) {
+            bigPayoutPool.add(amountAndInterest);
             return amountAndInterest;
         }
-
-        return 0;
         
+        return 0;
+    }
+
+    function totalStakers() public view returns(uint256){
+        uint256 _totalStakers = 0;
+        for (uint256 s = 0; s < stakeholders.length; s += 1){
+            _totalStakers = _totalStakers.add(stakes[stakeholders[s]]);
+        }
+        return _totalStakers;
     }
 
     /**
@@ -371,91 +441,12 @@ contract FIRE is Context, IFIRE, AccessControl {
         }
         return _totalStakes;
     }
-
-    // ---------- STAKEHOLDERS ----------
-
-    /**
-     * @notice A method to check if an address is a stakeholder.
-     * @param _address The address to verify.
-     * @return bool, uint256 Whether the address is a stakeholder, 
-     * and if so its position in the stakeholders array.
-     */
-    function isStakeholder(address _address) public view returns(bool, uint256) {
-        for (uint256 s = 0; s < stakeholders.length; s += 1){
-            if (_address == stakeholders[s]) return (true, s);
-        }
-        return (false, 0);
-    }
-
-    /**
-     * @notice A method to add a stakeholder.
-     * @param _stakeholder The stakeholder to add.
-     */
-    function addStakeholder(address _stakeholder) public {
-        (bool _isStakeholder, ) = isStakeholder(_stakeholder);
-        if(!_isStakeholder) stakeholders.push(_stakeholder);
-    }
-
-    /**
-     * @notice A method to remove a stakeholder.
-     * @param _stakeholder The stakeholder to remove.
-     */
-    function removeStakeholder(address _stakeholder) public {
-        (bool _isStakeholder, uint256 s) = isStakeholder(_stakeholder);
-        if(_isStakeholder){
-            stakeholders[s] = stakeholders[stakeholders.length - 1];
-            stakeholders.pop();
-        } 
-    }
-
-    // ---------- REWARDS ----------
-     
-    function rewardOf(address _stakeholder) public view returns(uint256) {
-        return rewards[_stakeholder];
-    }
-
-    /**
-     * @notice A method to the aggregated rewards from all stakeholders.
-     * @return uint256 The aggregated rewards from all stakeholders.
-     */
-    function totalRewards() public view returns(uint256) {
-        uint256 _totalRewards = 0;
-        for (uint256 s = 0; s < stakeholders.length; s += 1){
-            _totalRewards = _totalRewards.add(rewards[stakeholders[s]]);
-        }
-        return _totalRewards;
-    }
-
-    /** 
-     * @notice A simple method that calculates the rewards for each stakeholder.
-     * @param _stakeholder The stakeholder to calculate rewards for.
-     */
-    function calculateReward(address _stakeholder) public view returns(uint256) {
-        return stakes[_stakeholder] / 100;
-    }
-
-    /**
-     * @notice A method to distribute rewards to all stakeholders.
-     */
-    function distributeRewards() public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "caller is not the admin");
-        for (uint256 s = 0; s < stakeholders.length; s += 1){
-            address stakeholder = stakeholders[s];
-            uint256 reward = calculateReward(stakeholder);
-            rewards[stakeholder] = rewards[stakeholder].add(reward);
-        }
-    }
-
-    /**
-     * @notice A method to allow a stakeholder to withdraw his rewards.
-     */
-    function withdrawReward() public {
-        uint256 reward = rewards[msg.sender];
-        rewards[msg.sender] = 0;
-        mint(msg.sender, reward);
-    }
     
-        /**
+    function stakeOf(address account) public view returns(uint256) {
+        return stakes[account];
+    }
+
+    /**
      * @dev bankersRoundedDiv method that is used to divide and round the result 
      * (AKA round-half-to-even)
      *
@@ -469,7 +460,7 @@ contract FIRE is Context, IFIRE, AccessControl {
      * @param a What to divide
      * @param b Divide by this number
      */
-    function bankersRoundedDiv(uint256 a, uint256 b) public pure returns (uint256) {
+    function bankersRoundedDiv(uint256 a, uint256 b) internal pure returns (uint256) {
         require(b > 0, "div by 0"); 
 
         uint256 halfB = 0;
