@@ -202,7 +202,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/OldFire-Contracts/Fire-Stake/contracts/IFIRE.sol": "IFIRE"
+			"localhost/contracts/IFIRE.sol": "IFIRE"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -216,7 +216,7 @@
 		"remappings": []
 	},
 	"sources": {
-		"localhost/OldFire-Contracts/Fire-Stake/contracts/IFIRE.sol": {
+		"localhost/contracts/IFIRE.sol": {
 			"keccak256": "0xa863285c2d9d6d2f9958d958c4e476c7389c403d728ba15a13d4295a08d1736a",
 			"license": "MIT",
 			"urls": [

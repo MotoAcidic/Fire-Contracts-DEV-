@@ -78,7 +78,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": "DEX"
+			"localhost/contracts/FIRE.sol": "DEX"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -132,15 +132,15 @@
 				"dweb:/ipfs/QmZystFY76wkWCf7V3yKh3buZuKVKbswiE7y6yU62kk3zi"
 			]
 		},
-		"localhost/OldFire-Contracts/Fire-Stake/contracts/FIRE.sol": {
-			"keccak256": "0x82cf856c3703e56076f4ef5f0aaa266efee74a0e7dcf4f0ba6d14753c6f249cc",
+		"localhost/contracts/FIRE.sol": {
+			"keccak256": "0x1659934feb3dffecdd0b072a7adfedf72dc6b3f076ee423c2ac8a20c0bcb3a43",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://9c3337150ee2b964f45dda7405273d3257b1846389f80e4dab1ba5c82f1fcb81",
-				"dweb:/ipfs/QmRD2KnH8z5yycU3QcHNNLBRERhVtbafhne5JQLQAMBVkD"
+				"bzz-raw://eaa0856def27b56dd3b43266cdf8c35586c20551d1cba4f4f54cd962f59a41af",
+				"dweb:/ipfs/QmY9nKrkLUPbwEC7Jhuw7mSRCFTdVUUQNUi9L6x36J2jzi"
 			]
 		},
-		"localhost/OldFire-Contracts/Fire-Stake/contracts/IFIRE.sol": {
+		"localhost/contracts/IFIRE.sol": {
 			"keccak256": "0xa863285c2d9d6d2f9958d958c4e476c7389c403d728ba15a13d4295a08d1736a",
 			"license": "MIT",
 			"urls": [

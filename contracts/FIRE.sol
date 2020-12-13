@@ -170,14 +170,16 @@ contract FIRE is Context, IFIRE, AccessControl {
         emit Transfer(address(0), account, amount);
     }
 
-    function mintReward() internal canPoSMint returns (bool) {
+    function mintReward(uint256 amount) public canPoSMint returns (bool) {
         require(!frozenAccount[msg.sender]);
-        if(_balances[msg.sender] <= 0) return false;
-        uint256 senderID = stakeParams[msg.sender].session;
+        //uint256 senderID = stakeParams[msg.sender].session;
+        
         //uint reward = claimableAmount(senderID);
+        //if(msg.sender != sessionStakeData[senderID].account) return false;
+        
         // Testing reward function Only
-        uint256 reward = stakeParams[msg.sender].amount;
-        delete sessionStakeData[senderID].session;
+        uint256 reward = amount;
+        //delete sessionStakeData[senderID].session;
         
         if(reward <= 0) return false;
         
@@ -355,16 +357,31 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
     
    
-    function aaTest (uint256 _stake, uint256 sessionID) public {
-        require(sessionStakeData[sessionID].account == msg.sender && stakeParams[msg.sender].amount == _stake);
-        stakes[msg.sender] = stakes[msg.sender].sub(_stake);
-        //uint256 claimedAmount = claimableAmount(sessionID);
-
-        delete sessionStakeData[sessionID];
-        _stakingSupply.sub(sessionStakeData[sessionID].amount);
+    function aaTest (uint256 sessionID) public returns (bool) {
+        require(!frozenAccount[msg.sender], "This account is frozen");
+        require(sessionStakeData[sessionID].account == msg.sender, "You can only claim your own stakes");
+        uint256 sessionAmount = sessionStakeData[sessionID].amount;
+        uint256 senderID = stakeParams[msg.sender].session;
+        
+        // Subtract the stake from session stakes so they both match
+        stakes[msg.sender].sub(sessionAmount);
+        
+        // Reducing the total stake supply from the stake thats ending
+        //_stakingSupply.sub(sessionStakeData[sessionID].amount);
+        
+        // If this is the last stake the user has then remove them from 
+        // the global staker array
         if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
-        _initPayout(msg.sender, _stake);
-        //mint(msg.sender, claimedAmount);
+        
+        uint reward = claimableAmount(senderID);
+        
+        _totalSupply = _totalSupply.add(reward);
+        
+        _balances[msg.sender] = _balances[msg.sender].add(reward);
+        
+        delete sessionStakeData[sessionID];
+        emit Transfer(address(0), msg.sender, reward);
+        return true;
     }
    
      /*
