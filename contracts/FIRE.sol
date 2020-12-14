@@ -44,7 +44,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal _totalSupply = 0;
     uint256 public maxSupply = 21000000e18; //21m
     uint256 internal _stakingSupply = 0;
-    uint256 internal _bigPayoutThreshold = 100000000; // 1m coins from early end stakes
+    uint256 internal _bigPayoutThreshold = 100000000e18; // 1m coins from early end stakes
     uint256 public bigPayoutPool = 500;
     uint256 internal _unStakeGracePeriod = 14; // Amount in days
     uint256 internal _maxUnstakePeriod = 365; // Amount in days
@@ -57,16 +57,28 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 devPayment_ = 250000e18; // 250k coins
     uint256 teamPremine_ = 500000e18; // 500k coins
     
-    address teamAddrs = TEAM_ADDRS;
-    address devAddrs = DEV_ADDRS;
-    address internal constant DEV_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
-    address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
+    address internal constant _devAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    
+    address internal constant _advisorAddress_1 = 0x583031D1113aD414F02576BD6afaBfb302140225;
+    address internal constant _advisorAddress_2 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _advisorAddress_3 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _advisorAddress_4 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _advisorAddress_5 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    uint256 internal constant _advisorPercent = 5; // .05%
+    
+    address internal constant _coreTeamAddress_1 = 0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB;
+    address internal constant _coreTeamAddress_2 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _coreTeamAddress_3 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _coreTeamAddress_4 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _coreTeamAddress_5 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    uint256 internal constant _coreTeamPercent = 10; // 1%
+    
+    address internal constant _marketingAddress = 0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C;
+    uint256 internal constant _marketingPercent = 5; // .05%
     
     // Time based variables
     uint256 unlockTime;
-    uint256 private constant WEEKS = 50;
-    uint256 internal constant DAYS = WEEKS * 7;
-    uint256 private constant START_DAY = 1;
+
     uint256 internal constant days_year = 365;
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
@@ -74,6 +86,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     
     uint256 internal constant _burnPercent = 2; // .02% in basis points
     uint256 private _sessionsIds;
+    uint256 public totalStakers;
 
    /* This notifies clients about the amount burnt */
     event Burn(address indexed from, uint256 value);
@@ -119,14 +132,12 @@ contract FIRE is Context, IFIRE, AccessControl {
     _setupRole(SETTER_ROLE, msg.sender);
     _setupRole(MR_FREEZE_ROLE, msg.sender);
     
-    mint(DEV_ADDRS, devPayment_);
+    mint(_devAddress, devPayment_);
     mint(msg.sender, contractPremine_);
-    mint(TEAM_ADDRS, teamPremine_);
 
     _totalSupply = _totalSupply.add(premineTotal_);
-    emit Transfer(address(0), DEV_ADDRS, devPayment_);
+    emit Transfer(address(0), _devAddress, devPayment_);
     emit Transfer(address(0), msg.sender, contractPremine_);
-    emit Transfer(address(0), TEAM_ADDRS, teamPremine_);
     }
     
     modifier canPoSMint() {
@@ -170,6 +181,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
+    
     /*
     function mintReward(uint256 amount) public canPoSMint returns (bool) {
         require(!frozenAccount[msg.sender]);
@@ -371,7 +383,10 @@ contract FIRE is Context, IFIRE, AccessControl {
     
     function addStakeholder(address _stakeholder) internal {
         (bool _isStakeholder, ) = isStakeholder(_stakeholder);
-        if(!_isStakeholder) stakeholders.push(_stakeholder);
+        if(!_isStakeholder) {
+            stakeholders.push(_stakeholder); 
+            totalStakers = totalStakers.add(1);
+        }
     }
 
     function removeStakeholder(address _stakeholder) internal {
@@ -379,9 +394,12 @@ contract FIRE is Context, IFIRE, AccessControl {
         if(_isStakeholder){
             stakeholders[s] = stakeholders[stakeholders.length - 1];
             stakeholders.pop();
+            totalStakers = totalStakers.sub(1);
         } 
     }
-   
+    
+   /*
+   // BPD testing
     function aaTest () public {
         require(!frozenAccount[msg.sender]);
         require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
@@ -391,6 +409,33 @@ contract FIRE is Context, IFIRE, AccessControl {
             //rewards[stakeholder] = rewards[stakeholder].add(reward);
             mint(stakeholder, reward);
         }
+    }
+   */
+   
+    uint256 public testAmountCoreTeam; 
+    uint256 public testAmountAdvisors;
+    uint256 public testAmountMarketing;
+    function aaTest (uint256 amount, uint256 actualStakedDays, uint256 saidStakedDays) public {
+    
+            uint256 payOutAmount = amount.mul(actualStakedDays).div(saidStakedDays);
+            uint256 earlyUnstakePenalty = amount.sub(payOutAmount);
+            
+            uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
+            uint256 advisorPayout = earlyUnstakePenalty.mul(_advisorPercent).div(10000);
+            uint256 marketingPayout = earlyUnstakePenalty.mul(_marketingPercent).div(10000);
+            if (coreTeamPayout > 1){
+                testAmountCoreTeam = coreTeamPayout;
+                transfer(_coreTeamAddress_1, coreTeamPayout);
+            } 
+            if (advisorPayout > 1){
+                testAmountAdvisors = advisorPayout;
+                transfer(_advisorAddress_1, advisorPayout);
+            }
+            if (marketingPayout > 1){
+                testAmountMarketing = marketingPayout;
+                transfer(_marketingAddress, marketingPayout);
+            }
+            
     }
    
      /*
@@ -465,7 +510,8 @@ contract FIRE is Context, IFIRE, AccessControl {
     function _initPayout(address to, uint256 amount) internal {
         mint(to, amount);
     }
-    function claimableAmount(uint256 sessionID) public view returns (uint256){
+    
+    function claimableAmount(uint256 sessionID) internal view returns (uint256){
         require(now.sub(sessionStakeData[sessionID].start) > secondsAday, "You must have been staked for 1 full day first.");
         
         // ------------------------------------------------------------------------
@@ -485,11 +531,13 @@ contract FIRE is Context, IFIRE, AccessControl {
         
         if (stakingDays > daysStaked) {
             uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
-            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
-            uint256 amountClaimed = payOutAmount.sub(earlyUnstakePenalty);
-            uint256 endEarlyStaked = amountAndInterest.sub(amountClaimed);
-            bigPayoutPool.add(endEarlyStaked);
-            return amountClaimed;
+            //uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            
+            //uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
+            //coreTeamPayout = roundedDiv(coreTeamPayout, 10000);
+            
+            //bigPayoutPool.add(endEarlyStaked);
+            return payOutAmount;
             
         // ------------------------------------------------------------------------
         //              Claimed on time and under endStake grace period
@@ -521,14 +569,6 @@ contract FIRE is Context, IFIRE, AccessControl {
         }
         
         return 0;
-    }
-
-    function totalStakers() public view returns(uint256){
-        uint256 _totalStakers = 0;
-        for (uint256 s = 0; s < stakeholders.length; s += 1){
-            _totalStakers = _totalStakers.add(stakes[stakeholders[s]]);
-        }
-        return _totalStakers;
     }
 
     /**
