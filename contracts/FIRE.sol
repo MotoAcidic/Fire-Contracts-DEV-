@@ -71,13 +71,13 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant secondsAday = 86400;
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
-    uint256 internal constant _interestBaseRate = 600; //6% x 100
+    
+    uint256 internal constant _burnPercent = 2; // .02% in basis points
     uint256 private _sessionsIds;
 
    /* This notifies clients about the amount burnt */
     event Burn(address indexed from, uint256 value);
     event Transfer(address indexed from, address indexed to, uint tokens);
-    event Sent(address from, address to, uint amount);
     event stake(address indexed account, uint256 indexed sessionId, uint256 amount, uint256 start, uint256 end);
     event FrozenFunds(address target, bool frozen);
     event Mint(address indexed _address, uint _reward);
@@ -102,6 +102,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 start; 
         uint256 end;
         uint256 interest;
+        uint256 stakeDays;
         uint256 session;
     }
     
@@ -169,7 +170,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         _balances[account] = _balances[account].add(amount);
         emit Transfer(address(0), account, amount);
     }
-
+    /*
     function mintReward(uint256 amount) public canPoSMint returns (bool) {
         require(!frozenAccount[msg.sender]);
         //uint256 senderID = stakeParams[msg.sender].session;
@@ -190,6 +191,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         emit Transfer(address(0), msg.sender, reward);
         return true;
     }
+    */
     
     function totalSupply() public override view returns (uint256) {
         return _totalSupply;
@@ -198,24 +200,25 @@ contract FIRE is Context, IFIRE, AccessControl {
     function balanceOf(address account) public override view returns (uint256) {
         return _balances[account];
     }
-    
-    function send(address receiver, uint amount) public {
-        require(!frozenAccount[msg.sender]);
-        require(amount <= _balances[msg.sender], "Insufficient balance.");
-        _balances[msg.sender] -= amount;
-        _balances[receiver] += amount;
-        emit Sent(msg.sender, receiver, amount);
-    }
 
-    function transfer(address _toAddress, uint256 _amountOfTokens) public override returns (bool) {
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
         require(!frozenAccount[msg.sender]);
-        address _customerAddress = msg.sender;
-        require(_amountOfTokens <= tokenBalanceLedger_[_customerAddress]);
+        uint256 finalAmount;
+        uint256 amountToBurn = amount.mul(_burnPercent).div(10000);
+        _beforeTokenTransfer(msg.sender, address(0), amountToBurn);
 
-        tokenBalanceLedger_[_customerAddress] = SafeMath.sub(tokenBalanceLedger_[_customerAddress], _amountOfTokens);
-        tokenBalanceLedger_[_toAddress] = SafeMath.add(tokenBalanceLedger_[_toAddress], _amountOfTokens);
-        emit Transfer(_customerAddress, _toAddress, _amountOfTokens);
-        return true;
+        _balances[msg.sender] = _balances[msg.sender].sub(amountToBurn, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amountToBurn);
+        emit Transfer(msg.sender, address(0), amountToBurn);
+        
+        finalAmount = amount.sub(amountToBurn);
+        
+
+        _beforeTokenTransfer(msg.sender, recipient, finalAmount);
+
+        _balances[msg.sender] = _balances[msg.sender].sub(finalAmount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(finalAmount);
+        emit Transfer(msg.sender, recipient, finalAmount);
     }
     
     function approve(address delegate, uint256 numTokens) public override returns (bool) {
@@ -262,16 +265,12 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
 
     // ---------- STAKES ----------
-    
-     /**
-     * @notice A method for a stakeholder to create a stake.
-     * @param amount The size of the stake to be created.
-     */
+
+     
     function createStake(uint256 amount, uint256 stakingDays) public returns (uint256){
         require(_balances[msg.sender] >= amount, "You can only stake what you own.");
         require(stakingDays > 0, "stakingDays < 1");
         
-        //emit Burn(msg.sender, amount);
         _beforeTokenTransfer(msg.sender, address(0), amount);
 
         _balances[msg.sender] = _balances[msg.sender].sub(amount, "ERC20: burn amount exceeds balance");
@@ -281,17 +280,43 @@ contract FIRE is Context, IFIRE, AccessControl {
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
         
+        uint256 _interestBaseRate;
+        uint256 _interestDayRate;
+        uint256 _interestRate;
         uint256 sessionId = _sessionsIds;
         uint256 stakingInterest;
-        uint256 stakingInterestCalc;
         uint256 stakingDaysCalc;
-        _sessionsIds = _sessionsIds.add(1);
-        stakingDaysCalc = roundedDiv(days_year, stakingDays);
-        //stakingInterestCalc = bankersRoundedDiv(_interestBaseRate, 100);
         
-        //stakingInterest = _stake.mul(1 + (stakingInterestCalc.mul(_interestBaseRate)));
-        stakingInterestCalc = amount.mul(_interestBaseRate).div(10000);
-        stakingInterest = bankersRoundedDiv(stakingInterestCalc, stakingDaysCalc);
+        if(stakingDays >= 15 && stakingDays <= 30){
+            _interestBaseRate = 500; // 5%
+            _interestDayRate = 33; // .33% perday
+            stakingDaysCalc = stakingDays.sub(15);
+            _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
+        }else if(stakingDays > 30 && stakingDays <= 90){
+            _interestBaseRate = 1200; // 12%
+            _interestDayRate = 40; // .40% perday
+            stakingDaysCalc = stakingDays.sub(30);
+            _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
+        }else if(stakingDays > 90 && stakingDays <= 180){
+            _interestBaseRate = 4200; // 42%
+            _interestDayRate = 47; // .47% perday
+            stakingDaysCalc = stakingDays.sub(90);
+            _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
+        }else if(stakingDays > 180 && stakingDays <= 360){
+            _interestBaseRate = 9600; // 96%
+            _interestDayRate = 53; // .53 perday
+            stakingDaysCalc = stakingDays.sub(180);
+            _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
+        }else if(stakingDays > 360){
+            _interestBaseRate = 22000; // 220%
+            _interestDayRate = 61; // .61%
+            stakingDaysCalc = stakingDays.sub(360);
+            _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
+        }
+        //emit Burn(msg.sender, amount);
+        
+        _sessionsIds = _sessionsIds.add(1);
+        stakingInterest = amount.mul(_interestRate).div(10000);
 
         stakeData memory stakeData_ = stakeData({
             account: msg.sender,
@@ -299,6 +324,7 @@ contract FIRE is Context, IFIRE, AccessControl {
             session: sessionId,
             start: now,
             end: unlockTime,
+            stakeDays: stakingDays,
             interest: stakingInterest
         });
         
@@ -316,7 +342,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         
         return (sessionId);
     }
-    
+
     function distributeBigPayout() public {
         require(!frozenAccount[msg.sender]);
         require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
@@ -355,33 +381,16 @@ contract FIRE is Context, IFIRE, AccessControl {
             stakeholders.pop();
         } 
     }
-    
    
-    function aaTest (uint256 sessionID) public returns (bool) {
-        require(!frozenAccount[msg.sender], "This account is frozen");
-        require(sessionStakeData[sessionID].account == msg.sender, "You can only claim your own stakes");
-        uint256 sessionAmount = sessionStakeData[sessionID].amount;
-        uint256 senderID = stakeParams[msg.sender].session;
-        
-        // Subtract the stake from session stakes so they both match
-        stakes[msg.sender].sub(sessionAmount);
-        
-        // Reducing the total stake supply from the stake thats ending
-        //_stakingSupply.sub(sessionStakeData[sessionID].amount);
-        
-        // If this is the last stake the user has then remove them from 
-        // the global staker array
-        if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
-        
-        uint reward = claimableAmount(senderID);
-        
-        _totalSupply = _totalSupply.add(reward);
-        
-        _balances[msg.sender] = _balances[msg.sender].add(reward);
-        
-        delete sessionStakeData[sessionID];
-        emit Transfer(address(0), msg.sender, reward);
-        return true;
+    function aaTest () public {
+        require(!frozenAccount[msg.sender]);
+        require(bigPayoutPool >= _bigPayoutThreshold); //bigPayout must be over 1m coins to payout to holders
+        for (uint256 s = 0; s < stakeholders.length; s += 1){
+            address stakeholder = stakeholders[s];
+            uint256 reward = calculateBPD(stakeholder);
+            //rewards[stakeholder] = rewards[stakeholder].add(reward);
+            mint(stakeholder, reward);
+        }
     }
    
      /*
@@ -397,20 +406,18 @@ contract FIRE is Context, IFIRE, AccessControl {
     
     */
     
-    function returnSessionInfo(uint256 sessionID) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
+    function returnSessionInfo(uint256 sessionID) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 stakeDays, uint256 interest){
             return (sessionStakeData[sessionID].account,
                     sessionStakeData[sessionID].amount,
                     sessionStakeData[sessionID].session,
                     sessionStakeData[sessionID].start,
                     sessionStakeData[sessionID].end,
+                    sessionStakeData[sessionID].stakeDays,
                     sessionStakeData[sessionID].interest
                     );
     }
 
-    /**
-     * @notice A method for a stakeholder to remove a stake.
-     * @param _stake The size of the stake to be removed.
-     */
+     /*
     function removeStake(uint256 _stake, uint256 sessionID) public {
         require(!frozenAccount[msg.sender]);
         stakes[msg.sender] = stakes[msg.sender].sub(_stake);
@@ -426,7 +433,38 @@ contract FIRE is Context, IFIRE, AccessControl {
     function _initPayout(address to, uint256 amount) internal {
         mint(to, amount);
     }
+    */
     
+    function removeStake(uint256 sessionID) public returns (bool) {
+        require(!frozenAccount[msg.sender], "This account is frozen");
+        require(sessionStakeData[sessionID].account == msg.sender, "You can only claim your own stakes");
+        uint256 sessionAmount = sessionStakeData[sessionID].amount;
+        //uint256 senderID = stakeParams[msg.sender].session;
+        
+        // Subtract the stake from session stakes so they both match
+        stakes[msg.sender] = stakes[msg.sender].sub(sessionAmount);
+        
+        // Reducing the total stake supply from the stake thats ending
+        
+        // If this is the last stake the user has then remove them from 
+        // the global staker array
+        if(stakes[msg.sender] == 0) removeStakeholder(msg.sender);
+        
+        //uint reward = claimableAmount(senderID);
+        uint reward = sessionAmount;
+        
+        _totalSupply = _totalSupply.add(reward);
+        
+        _balances[msg.sender] = _balances[msg.sender].add(reward);
+        
+        delete sessionStakeData[sessionID];
+        emit Transfer(address(0), msg.sender, reward);
+        return true;
+    }
+    
+    function _initPayout(address to, uint256 amount) internal {
+        mint(to, amount);
+    }
     function claimableAmount(uint256 sessionID) public view returns (uint256){
         require(now.sub(sessionStakeData[sessionID].start) > secondsAday, "You must have been staked for 1 full day first.");
         
