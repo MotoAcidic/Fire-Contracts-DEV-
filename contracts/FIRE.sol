@@ -305,7 +305,7 @@ contract FIRE is Context, IFIRE, AccessControl {
             stakingDaysCalc = stakingDays.sub(360);
             _interestRate = stakingDaysCalc.mul(_interestDayRate).add(_interestBaseRate);
         }
-        //emit Burn(msg.sender, amount);
+        
         
         _sessionsIds = _sessionsIds.add(1);
         stakingInterest = amount.mul(_interestRate).div(10000);
@@ -392,39 +392,90 @@ contract FIRE is Context, IFIRE, AccessControl {
     }
    */
    
-    uint256 public testAmountCoreTeam; 
-    uint256 public testAmountAdvisors;
-    uint256 public testAmountMarketing;
-    function aaTest (uint256 amount, uint256 actualStakedDays, uint256 saidStakedDays) public {
-    
-            uint256 payOutAmount = amount.mul(actualStakedDays).div(saidStakedDays);
-            uint256 earlyUnstakePenalty = amount.sub(payOutAmount);
+    uint256 public payOutAmount;
+    function aaTest (uint256 amount, uint256 actualStakedDays, uint256 saidStakedDays) public returns (uint256){
+        
+        // ------------------------------------------------------------------------
+        //                             Time Based Calculations
+        // ------------------------------------------------------------------------
+        
+        //uint256 timeStaked = now.sub(sessionStakeData[sessionID].start);
+        //uint256 stakingDays = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        //uint256 daysStaked = now.sub(sessionStakeData[sessionID].start).div(60).div(60).div(24);
+        //uint256 timeForFullReward = sessionStakeData[sessionID].end.sub(sessionStakeData[sessionID].start);
+        
+        //uint256 amountAndInterest = sessionStakeData[sessionID].amount.add(sessionStakeData[sessionID].interest);
+        
+        
+        uint256 commitedDaysToStake = saidStakedDays;
+        uint256 actualDaysStaked = actualStakedDays;
+        //uint256 timeForFullReward = actualStakedDays.add(_unStakeGracePeriod);
+        
+        uint256 amountAndInterest = amount;
+        
+        //uint256 payOutAmount;
+        uint256 penalty;
+        
+        // ------------------------------------------------------------------------
+        //                             Claimed to early
+        // ------------------------------------------------------------------------
+        
+        if (commitedDaysToStake > actualDaysStaked) {
+            payOutAmount = amountAndInterest.mul(actualDaysStaked).div(commitedDaysToStake);
+             penalty = amountAndInterest.sub(payOutAmount);
             
-            uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
-            uint256 advisorPayout = earlyUnstakePenalty.mul(_advisorPercent).div(10000);
-            uint256 marketingPayout = earlyUnstakePenalty.mul(_marketingPercent).div(10000);
-            uint256 burnAmount = earlyUnstakePenalty.mul(_burnEarlyEndStakePercent).div(10000);
-            uint256 bpdPoolAmount = earlyUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
+        // ------------------------------------------------------------------------
+        //              Claimed on time and under endStake grace period
+        // ------------------------------------------------------------------------
+        
+        } else if (actualDaysStaked >= commitedDaysToStake && actualDaysStaked <= commitedDaysToStake.add(_unStakeGracePeriod)) {
+            payOutAmount = amountAndInterest;
+            penalty = 0;
             
-            if (coreTeamPayout > 1){
-                testAmountCoreTeam = coreTeamPayout;
-                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
-                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
-                transfer(_coreTeamAddress_1, coreTeamPayout);
+        // ------------------------------------------------------------------------
+        //             Claimed after endStake grace period with penalties
+        // ------------------------------------------------------------------------
+        
+        } else if (actualDaysStaked > commitedDaysToStake.add(_unStakeGracePeriod) && actualDaysStaked < commitedDaysToStake.add(_maxUnstakePeriod)) {
+            penalty = amountAndInterest.mul(actualDaysStaked).div(_maxUnstakePeriod);
+            payOutAmount = amountAndInterest.sub(penalty);
+            
+        // ------------------------------------------------------------------------
+        //             Claimed to late all funds are moved to BPD pool
+        // ------------------------------------------------------------------------
+        
+        } else if (commitedDaysToStake.add(_maxUnstakePeriod) <= actualDaysStaked) {
+            penalty = amountAndInterest;
+            payOutAmount = 0;
+
+        }
+        
+            uint256 coreTeamPayout = penalty.mul(_coreTeamPercent).div(10000);
+            uint256 advisorPayout = penalty.mul(_advisorPercent).div(10000);
+            uint256 marketingPayout = penalty.mul(_marketingPercent).div(10000);
+            //uint256 burnAmount = penalty.mul(_burnEarlyEndStakePercent).div(10000);
+            uint256 bpdPoolAmount = penalty.mul(_bpdEarlyEndStakePercent).div(10000);
+            
+            if (coreTeamPayout > 1 && penalty > 0){
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_2, coreTeamPayout);
+                transfer(_coreTeamAddress_3, coreTeamPayout); transfer(_coreTeamAddress_4, coreTeamPayout);
+                transfer(_coreTeamAddress_5, coreTeamPayout);
             } 
-            if (advisorPayout > 1){
-                testAmountAdvisors = advisorPayout;
-                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
-                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
-                transfer(_advisorAddress_1, advisorPayout);
+            if (advisorPayout > 1 && penalty > 0){
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_2, advisorPayout);
+                transfer(_advisorAddress_3, advisorPayout); transfer(_advisorAddress_4, advisorPayout);
+                transfer(_advisorAddress_5, advisorPayout);
             }
-            if (marketingPayout > 1){
-                testAmountMarketing = marketingPayout;
+            if (marketingPayout > 1 && penalty > 0){
                 transfer(_marketingAddress, marketingPayout);
             }
-            burn(msg.sender, burnAmount);
+            //burn(msg.sender, burnAmount);
             bigPayoutPool.add(bpdPoolAmount);
+            
+            return payOutAmount;
+
     }
+    
     
      /*
     function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
@@ -499,6 +550,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         mint(to, amount);
     }
     
+    /*
     function claimableAmount(uint256 sessionID) internal returns (uint256){
         require(now.sub(sessionStakeData[sessionID].start) > secondsAday, "You must have been staked for 1 full day first.");
         
@@ -528,19 +580,16 @@ contract FIRE is Context, IFIRE, AccessControl {
             uint256 bpdPoolAmount = earlyUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
             
             if (coreTeamPayout > 1){
-                testAmountCoreTeam = coreTeamPayout;
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout);
             } 
             if (advisorPayout > 1){
-                testAmountAdvisors = advisorPayout;
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout);
             }
             if (marketingPayout > 1){
-                testAmountMarketing = marketingPayout;
                 transfer(_marketingAddress, marketingPayout);
             }
             burn(msg.sender, burnAmount);
@@ -573,19 +622,16 @@ contract FIRE is Context, IFIRE, AccessControl {
             uint256 bpdPoolAmount = lateUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
             
             if (coreTeamPayout > 1){
-                testAmountCoreTeam = coreTeamPayout;
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout);
             } 
             if (advisorPayout > 1){
-                testAmountAdvisors = advisorPayout;
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout);
             }
             if (marketingPayout > 1){
-                testAmountMarketing = marketingPayout;
                 transfer(_marketingAddress, marketingPayout);
             }
             burn(msg.sender, burnAmount);
@@ -608,19 +654,16 @@ contract FIRE is Context, IFIRE, AccessControl {
             uint256 bpdPoolAmount = lateUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
             
             if (coreTeamPayout > 1){
-                testAmountCoreTeam = coreTeamPayout;
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout);
             } 
             if (advisorPayout > 1){
-                testAmountAdvisors = advisorPayout;
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout);
             }
             if (marketingPayout > 1){
-                testAmountMarketing = marketingPayout;
                 transfer(_marketingAddress, marketingPayout);
             }
             burn(msg.sender, burnAmount);
@@ -632,6 +675,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         
         return 0;
     }
+    */
 
     /**
      * @notice A method to the aggregated stakes from all stakeholders.
