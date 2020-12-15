@@ -41,10 +41,10 @@ contract FIRE is Context, IFIRE, AccessControl {
     string internal constant name = "Fire Network";
     string internal constant symbol = "FIRE";
     uint8 internal constant decimals = 18;
-    uint256 internal _totalSupply = 0;
-    uint256 public maxSupply = 21000000e18; //21m
+    uint256 public totalSupply = 0;
+    uint256 public maxSupply = 750000000000e18; //750b
     uint256 internal _stakingSupply = 0;
-    uint256 internal _bigPayoutThreshold = 100000000e18; // 1m coins from early end stakes
+    uint256 internal _bigPayoutThreshold = 10000000000e18; // 100m coins from early end stakes
     uint256 public bigPayoutPool = 500;
     uint256 internal _unStakeGracePeriod = 14; // Amount in days
     uint256 internal _maxUnstakePeriod = 365; // Amount in days
@@ -52,29 +52,44 @@ contract FIRE is Context, IFIRE, AccessControl {
     address _owner;
     address internal contractOwner = msg.sender;
     
-    uint256 premineTotal_ = 10250000e18; // 10.25m coins total on launch
-    uint256 contractPremine_ = 5000000e18; // 5m coins
-    uint256 devPayment_ = 250000e18; // 250k coins
-    uint256 teamPremine_ = 500000e18; // 500k coins
+    // Premine values
+    uint256 premineTotal = 676000000000e18; // 675b coins total on launch
+    uint256 presalePremine = 250000000000e18; // 250b coins
+    uint256 devPayment = 1000000000e18; // 1b coins
+    uint256 swapPremine = 250000000000e18; // 250b coins
+    uint256 uinswapPremine = 75000000000e18; // 75b coins
+    uint256 devFundPremine = 75000000000e18; // 75b coins
+    uint256 teamPremine = 25000000000e18; // 25b coins
     
+    address internal constant _presaleAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _devAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _swapAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _uinswapAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _devFundAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
+    address internal constant _teamAddress = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     
     address internal constant _advisorAddress_1 = 0x583031D1113aD414F02576BD6afaBfb302140225;
     address internal constant _advisorAddress_2 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _advisorAddress_3 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _advisorAddress_4 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _advisorAddress_5 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
-    uint256 internal constant _advisorPercent = 5; // .05%
+    uint256 internal constant _advisorPercent = 100; // 1% in basis points
     
     address internal constant _coreTeamAddress_1 = 0x4B0897b0513fdC7C541B6d9D7E929C4e5364D2dB;
     address internal constant _coreTeamAddress_2 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _coreTeamAddress_3 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _coreTeamAddress_4 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
     address internal constant _coreTeamAddress_5 = 0xdD870fA1b7C4700F2BD7f44238821C26f7392148;
-    uint256 internal constant _coreTeamPercent = 10; // 1%
+    uint256 internal constant _coreTeamPercent = 500; // 5% in basis points
     
     address internal constant _marketingAddress = 0x14723A09ACff6D2A60DcdF7aA4AFf308FDDC160C;
-    uint256 internal constant _marketingPercent = 5; // .05%
+    uint256 internal constant _marketingPercent = 100; // 1% in basis points
+    
+    uint256 internal constant _burnTransferPercent = 2; // .02% in basis points
+    uint256 internal constant _burnEarlyEndStakePercent = 3000; // 30% in basis points
+    uint256 internal constant _bpdEarlyEndStakePercent = 3000; // 30% in basis points
+    
+    // 5% + 25% + 1% + 30% + 30% = 91% 
     
     // Time based variables
     uint256 unlockTime;
@@ -84,7 +99,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     uint256 internal constant blocksAday = 6500; // Rough rounded up blocks perday based on 14sec eth block time
     
     
-    uint256 internal constant _burnPercent = 2; // .02% in basis points
+
     uint256 private _sessionsIds;
     uint256 public totalStakers;
 
@@ -95,7 +110,7 @@ contract FIRE is Context, IFIRE, AccessControl {
     event FrozenFunds(address target, bool frozen);
     event Mint(address indexed _address, uint _reward);
     
-    mapping(address => uint256) _balances;
+    mapping(address => uint256) balances;
     mapping(address => uint256) internal tokenBalanceLedger_;
     mapping(address => mapping (address => uint256)) allowed;
     mapping(address => uint256) internal stakes;
@@ -132,16 +147,16 @@ contract FIRE is Context, IFIRE, AccessControl {
     _setupRole(SETTER_ROLE, msg.sender);
     _setupRole(MR_FREEZE_ROLE, msg.sender);
     
-    mint(_devAddress, devPayment_);
-    mint(msg.sender, contractPremine_);
+    mint(_devAddress, devPayment);
+    //mint(msg.sender, contractPremine);
 
-    _totalSupply = _totalSupply.add(premineTotal_);
-    emit Transfer(address(0), _devAddress, devPayment_);
-    emit Transfer(address(0), msg.sender, contractPremine_);
+    totalSupply = totalSupply.add(premineTotal);
+    emit Transfer(address(0), _devAddress, devPayment);
+    //emit Transfer(address(0), msg.sender, contractPremine);
     }
     
     modifier canPoSMint() {
-        require(_totalSupply < maxSupply);
+        require(totalSupply < maxSupply);
         _;
     }
     
@@ -177,59 +192,28 @@ contract FIRE is Context, IFIRE, AccessControl {
     function mint(address account, uint256 amount) public {
         require(!frozenAccount[msg.sender]);
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
+        totalSupply = totalSupply.add(amount);
+        balances[account] = balances[account].add(amount);
         emit Transfer(address(0), account, amount);
-    }
-    
-    /*
-    function mintReward(uint256 amount) public canPoSMint returns (bool) {
-        require(!frozenAccount[msg.sender]);
-        //uint256 senderID = stakeParams[msg.sender].session;
-        
-        //uint reward = claimableAmount(senderID);
-        //if(msg.sender != sessionStakeData[senderID].account) return false;
-        
-        // Testing reward function Only
-        uint256 reward = amount;
-        //delete sessionStakeData[senderID].session;
-        
-        if(reward <= 0) return false;
-        
-        _totalSupply = _totalSupply.add(reward);
-        
-        _balances[msg.sender] = _balances[msg.sender].add(reward);
-
-        emit Transfer(address(0), msg.sender, reward);
-        return true;
-    }
-    */
-    
-    function totalSupply() public override view returns (uint256) {
-        return _totalSupply;
     }
 
     function balanceOf(address account) public override view returns (uint256) {
-        return _balances[account];
+        return balances[account];
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         require(!frozenAccount[msg.sender]);
         uint256 finalAmount;
-        uint256 amountToBurn = amount.mul(_burnPercent).div(10000);
-        _beforeTokenTransfer(msg.sender, address(0), amountToBurn);
-
-        _balances[msg.sender] = _balances[msg.sender].sub(amountToBurn, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amountToBurn);
-        emit Transfer(msg.sender, address(0), amountToBurn);
+        uint256 amountToBurn = amount.mul(_burnTransferPercent).div(10000);
+        
+        burn(msg.sender, amountToBurn);
         
         finalAmount = amount.sub(amountToBurn);
-        
 
         _beforeTokenTransfer(msg.sender, recipient, finalAmount);
 
-        _balances[msg.sender] = _balances[msg.sender].sub(finalAmount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(finalAmount);
+        balances[msg.sender] = balances[msg.sender].sub(finalAmount, "ERC20: transfer amount exceeds balance");
+        balances[recipient] = balances[recipient].add(finalAmount);
         emit Transfer(msg.sender, recipient, finalAmount);
     }
     
@@ -245,11 +229,11 @@ contract FIRE is Context, IFIRE, AccessControl {
 
     function transferFrom(address owner, address buyer, uint256 numTokens) public override returns (bool) {
         require(!frozenAccount[msg.sender]);
-        require(numTokens <= _balances[owner]);
+        require(numTokens <= balances[owner]);
         require(numTokens <= allowed[owner][msg.sender]);
-        _balances[owner] = _balances[owner].sub(numTokens);
+        balances[owner] = balances[owner].sub(numTokens);
         allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);
-        _balances[buyer] = _balances[buyer].add(numTokens);
+        balances[buyer] = balances[buyer].add(numTokens);
         emit Transfer(owner, buyer, numTokens);
         return true;
     }
@@ -259,19 +243,19 @@ contract FIRE is Context, IFIRE, AccessControl {
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amount);
+        balances[account] = balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        totalSupply = totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
     
     function burnFrom(address _from, uint256 _value) public returns(bool success) {
-        require(_balances[_from] >= _value);                // Check if the targeted balance is enough
+        require(balances[_from] >= _value);                // Check if the targeted balance is enough
         require(_value <= allowed[_from][msg.sender]);    // Check allowance
-        _balances[_from] -= _value;                         // Subtract from the targeted balance
+        balances[_from] -= _value;                         // Subtract from the targeted balance
         allowed[_from][msg.sender] -= _value;             // Subtract from the sender's allowance
-        _totalSupply -= _value;                              // Update totalSupply
+        totalSupply -= _value;                              // Update totalSupply
         burn(msg.sender, _value);
         return true;
     }
@@ -280,14 +264,10 @@ contract FIRE is Context, IFIRE, AccessControl {
 
      
     function createStake(uint256 amount, uint256 stakingDays) public returns (uint256){
-        require(_balances[msg.sender] >= amount, "You can only stake what you own.");
+        require(balances[msg.sender] >= amount, "You can only stake what you own.");
         require(stakingDays > 0, "stakingDays < 1");
-        
-        _beforeTokenTransfer(msg.sender, address(0), amount);
-
-        _balances[msg.sender] = _balances[msg.sender].sub(amount, "ERC20: burn amount exceeds balance");
-        _totalSupply = _totalSupply.sub(amount);
-        emit Transfer(msg.sender, address(0), amount);
+       
+        burn(msg.sender, amount);
         
         // Set the time it takes to unstake
         unlockTime = now.add(stakingDays.mul(secondsAday));
@@ -344,7 +324,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         sessionStakeData[sessionId] = stakeData_;
         
         //Increase staking supply
-        _stakingSupply.add(amount);
+        //_stakingSupply.add(amount);
         
         //If user is not already in the stakes array add them for bpd payouts
         if(stakes[msg.sender] == 0) addStakeholder(msg.sender);
@@ -423,21 +403,29 @@ contract FIRE is Context, IFIRE, AccessControl {
             uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
             uint256 advisorPayout = earlyUnstakePenalty.mul(_advisorPercent).div(10000);
             uint256 marketingPayout = earlyUnstakePenalty.mul(_marketingPercent).div(10000);
+            uint256 burnAmount = earlyUnstakePenalty.mul(_burnEarlyEndStakePercent).div(10000);
+            uint256 bpdPoolAmount = earlyUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
+            
             if (coreTeamPayout > 1){
                 testAmountCoreTeam = coreTeamPayout;
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
                 transfer(_coreTeamAddress_1, coreTeamPayout);
             } 
             if (advisorPayout > 1){
                 testAmountAdvisors = advisorPayout;
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
                 transfer(_advisorAddress_1, advisorPayout);
             }
             if (marketingPayout > 1){
                 testAmountMarketing = marketingPayout;
                 transfer(_marketingAddress, marketingPayout);
             }
-            
+            burn(msg.sender, burnAmount);
+            bigPayoutPool.add(bpdPoolAmount);
     }
-   
+    
      /*
     function returnStakerInfo(address stakerAccount) public view returns (address account, uint256 amount, uint256 session, uint256 start, uint256 end, uint256 interest){
             return (stakeParams[stakerAccount].account,
@@ -498,9 +486,9 @@ contract FIRE is Context, IFIRE, AccessControl {
         //uint reward = claimableAmount(senderID);
         uint reward = sessionAmount;
         
-        _totalSupply = _totalSupply.add(reward);
+        totalSupply = totalSupply.add(reward);
         
-        _balances[msg.sender] = _balances[msg.sender].add(reward);
+        balances[msg.sender] = balances[msg.sender].add(reward);
         
         delete sessionStakeData[sessionID];
         emit Transfer(address(0), msg.sender, reward);
@@ -511,7 +499,7 @@ contract FIRE is Context, IFIRE, AccessControl {
         mint(to, amount);
     }
     
-    function claimableAmount(uint256 sessionID) internal view returns (uint256){
+    function claimableAmount(uint256 sessionID) internal returns (uint256){
         require(now.sub(sessionStakeData[sessionID].start) > secondsAday, "You must have been staked for 1 full day first.");
         
         // ------------------------------------------------------------------------
@@ -531,12 +519,33 @@ contract FIRE is Context, IFIRE, AccessControl {
         
         if (stakingDays > daysStaked) {
             uint256 payOutAmount = amountAndInterest.mul(daysStaked).div(stakingDays);
-            //uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
+            uint256 earlyUnstakePenalty = amountAndInterest.sub(payOutAmount);
             
-            //uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
-            //coreTeamPayout = roundedDiv(coreTeamPayout, 10000);
+            uint256 coreTeamPayout = earlyUnstakePenalty.mul(_coreTeamPercent).div(10000);
+            uint256 advisorPayout = earlyUnstakePenalty.mul(_advisorPercent).div(10000);
+            uint256 marketingPayout = earlyUnstakePenalty.mul(_marketingPercent).div(10000);
+            uint256 burnAmount = earlyUnstakePenalty.mul(_burnEarlyEndStakePercent).div(10000);
+            uint256 bpdPoolAmount = earlyUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
             
-            //bigPayoutPool.add(endEarlyStaked);
+            if (coreTeamPayout > 1){
+                testAmountCoreTeam = coreTeamPayout;
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout);
+            } 
+            if (advisorPayout > 1){
+                testAmountAdvisors = advisorPayout;
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout);
+            }
+            if (marketingPayout > 1){
+                testAmountMarketing = marketingPayout;
+                transfer(_marketingAddress, marketingPayout);
+            }
+            burn(msg.sender, burnAmount);
+            bigPayoutPool.add(bpdPoolAmount);
+            
             return payOutAmount;
             
         // ------------------------------------------------------------------------
@@ -556,6 +565,32 @@ contract FIRE is Context, IFIRE, AccessControl {
             uint256 payOutAmount = amountAndInterest.mul(uint256(_maxUnstakePeriod).sub(daysAfterStaking)).div(700);
             uint256 lateUnstakePenalty = amountAndInterest.sub(payOutAmount);
             uint256 amountClaimed = payOutAmount.sub(lateUnstakePenalty);
+            
+            uint256 coreTeamPayout = lateUnstakePenalty.mul(_coreTeamPercent).div(10000);
+            uint256 advisorPayout = lateUnstakePenalty.mul(_advisorPercent).div(10000);
+            uint256 marketingPayout = lateUnstakePenalty.mul(_marketingPercent).div(10000);
+            uint256 burnAmount = lateUnstakePenalty.mul(_burnEarlyEndStakePercent).div(10000);
+            uint256 bpdPoolAmount = lateUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
+            
+            if (coreTeamPayout > 1){
+                testAmountCoreTeam = coreTeamPayout;
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout);
+            } 
+            if (advisorPayout > 1){
+                testAmountAdvisors = advisorPayout;
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout);
+            }
+            if (marketingPayout > 1){
+                testAmountMarketing = marketingPayout;
+                transfer(_marketingAddress, marketingPayout);
+            }
+            burn(msg.sender, burnAmount);
+            bigPayoutPool.add(bpdPoolAmount);
+            
 
             return amountClaimed;
             
@@ -564,8 +599,35 @@ contract FIRE is Context, IFIRE, AccessControl {
         // ------------------------------------------------------------------------
         
         } else if (stakingDays.add(_maxUnstakePeriod) <= daysStaked) {
-            bigPayoutPool.add(amountAndInterest);
-            return amountAndInterest;
+            uint256 lateUnstakePenalty = amountAndInterest;
+            
+            uint256 coreTeamPayout = lateUnstakePenalty.mul(_coreTeamPercent).div(10000);
+            uint256 advisorPayout = lateUnstakePenalty.mul(_advisorPercent).div(10000);
+            uint256 marketingPayout = lateUnstakePenalty.mul(_marketingPercent).div(10000);
+            uint256 burnAmount = lateUnstakePenalty.mul(_burnEarlyEndStakePercent).div(10000);
+            uint256 bpdPoolAmount = lateUnstakePenalty.mul(_bpdEarlyEndStakePercent).div(10000);
+            
+            if (coreTeamPayout > 1){
+                testAmountCoreTeam = coreTeamPayout;
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout); transfer(_coreTeamAddress_1, coreTeamPayout);
+                transfer(_coreTeamAddress_1, coreTeamPayout);
+            } 
+            if (advisorPayout > 1){
+                testAmountAdvisors = advisorPayout;
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout); transfer(_advisorAddress_1, advisorPayout);
+                transfer(_advisorAddress_1, advisorPayout);
+            }
+            if (marketingPayout > 1){
+                testAmountMarketing = marketingPayout;
+                transfer(_marketingAddress, marketingPayout);
+            }
+            burn(msg.sender, burnAmount);
+            bigPayoutPool.add(bpdPoolAmount);
+            
+            
+            return 0;
         }
         
         return 0;
