@@ -48,7 +48,6 @@
 			"allowance(address,address)": "dd62ed3e",
 			"approve(address,uint256)": "095ea7b3",
 			"balanceOf(address)": "70a08231",
-			"totalSupply()": "18160ddd",
 			"transfer(address,uint256)": "a9059cbb",
 			"transferFrom(address,address,uint256)": "23b872dd"
 		}
@@ -161,19 +160,6 @@
 				}
 			],
 			"name": "balanceOf",
-			"outputs": [
-				{
-					"internalType": "uint256",
-					"name": "",
-					"type": "uint256"
-				}
-			],
-			"stateMutability": "view",
-			"type": "function"
-		},
-		{
-			"inputs": [],
-			"name": "totalSupply",
 			"outputs": [
 				{
 					"internalType": "uint256",

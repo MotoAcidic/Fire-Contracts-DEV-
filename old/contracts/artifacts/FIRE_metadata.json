@@ -171,31 +171,6 @@
 				"anonymous": false,
 				"inputs": [
 					{
-						"indexed": false,
-						"internalType": "address",
-						"name": "from",
-						"type": "address"
-					},
-					{
-						"indexed": false,
-						"internalType": "address",
-						"name": "to",
-						"type": "address"
-					},
-					{
-						"indexed": false,
-						"internalType": "uint256",
-						"name": "amount",
-						"type": "uint256"
-					}
-				],
-				"name": "Sent",
-				"type": "event"
-			},
-			{
-				"anonymous": false,
-				"inputs": [
-					{
 						"indexed": true,
 						"internalType": "address",
 						"name": "from",
@@ -307,19 +282,32 @@
 				"type": "function"
 			},
 			{
+				"inputs": [],
+				"name": "aaBPDamount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "uint256",
-						"name": "sessionID",
+						"name": "amountStaked",
 						"type": "uint256"
 					}
 				],
 				"name": "aaTest",
 				"outputs": [
 					{
-						"internalType": "bool",
+						"internalType": "uint256",
 						"name": "",
-						"type": "bool"
+						"type": "uint256"
 					}
 				],
 				"stateMutability": "nonpayable",
@@ -438,25 +426,6 @@
 					}
 				],
 				"name": "calculateBPD",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "sessionID",
-						"type": "uint256"
-					}
-				],
-				"name": "claimableAmount",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -737,11 +706,11 @@
 				"inputs": [
 					{
 						"internalType": "uint256",
-						"name": "amount",
+						"name": "sessionID",
 						"type": "uint256"
 					}
 				],
-				"name": "mintReward",
+				"name": "removeStake",
 				"outputs": [
 					{
 						"internalType": "bool",
@@ -749,24 +718,6 @@
 						"type": "bool"
 					}
 				],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "_stake",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "sessionID",
-						"type": "uint256"
-					}
-				],
-				"name": "removeStake",
-				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
 			},
@@ -825,6 +776,11 @@
 					},
 					{
 						"internalType": "uint256",
+						"name": "stakeDays",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
 						"name": "interest",
 						"type": "uint256"
 					}
@@ -846,24 +802,6 @@
 					}
 				],
 				"name": "revokeRole",
-				"outputs": [],
-				"stateMutability": "nonpayable",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "address",
-						"name": "receiver",
-						"type": "address"
-					},
-					{
-						"internalType": "uint256",
-						"name": "amount",
-						"type": "uint256"
-					}
-				],
-				"name": "send",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -930,12 +868,12 @@
 				"inputs": [
 					{
 						"internalType": "address",
-						"name": "_toAddress",
+						"name": "recipient",
 						"type": "address"
 					},
 					{
 						"internalType": "uint256",
-						"name": "_amountOfTokens",
+						"name": "amount",
 						"type": "uint256"
 					}
 				],
@@ -983,11 +921,6 @@
 		"devdoc": {
 			"kind": "dev",
 			"methods": {
-				"createStake(uint256,uint256)": {
-					"params": {
-						"amount": "The size of the stake to be created."
-					}
-				},
 				"getRoleAdmin(bytes32)": {
 					"details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
 				},
@@ -1003,18 +936,13 @@
 				"hasRole(bytes32,address)": {
 					"details": "Returns `true` if `account` has been granted `role`."
 				},
-				"removeStake(uint256,uint256)": {
-					"params": {
-						"_stake": "The size of the stake to be removed."
-					}
-				},
 				"renounceRole(bytes32,address)": {
 					"details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`."
 				},
 				"revokeRole(bytes32,address)": {
 					"details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role."
 				},
-				"totalStakes()": {
+				"stakeOf(address)": {
 					"returns": {
 						"_0": "uint256 The aggregated stakes from all stakeholders."
 					}
@@ -1025,13 +953,7 @@
 		"userdoc": {
 			"kind": "user",
 			"methods": {
-				"createStake(uint256,uint256)": {
-					"notice": "A method for a stakeholder to create a stake."
-				},
-				"removeStake(uint256,uint256)": {
-					"notice": "A method for a stakeholder to remove a stake."
-				},
-				"totalStakes()": {
+				"stakeOf(address)": {
 					"notice": "A method to the aggregated stakes from all stakeholders."
 				}
 			},
@@ -1095,19 +1017,19 @@
 			]
 		},
 		"localhost/contracts/FIRE.sol": {
-			"keccak256": "0x1659934feb3dffecdd0b072a7adfedf72dc6b3f076ee423c2ac8a20c0bcb3a43",
+			"keccak256": "0xa899449fd6e8802fa25f084c843e95d77433ed6be1ef642867050d54c1558dc8",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://eaa0856def27b56dd3b43266cdf8c35586c20551d1cba4f4f54cd962f59a41af",
-				"dweb:/ipfs/QmY9nKrkLUPbwEC7Jhuw7mSRCFTdVUUQNUi9L6x36J2jzi"
+				"bzz-raw://77f25a056fad4e7c8bfc3d3db0f5e2beca508394b3ded7820dbe29235b2b4949",
+				"dweb:/ipfs/QmTc4u6HrUqdRF7PaL7VYrHJmjrSUBFjeGT3CuxzdFu3mc"
 			]
 		},
 		"localhost/contracts/IFIRE.sol": {
-			"keccak256": "0xa863285c2d9d6d2f9958d958c4e476c7389c403d728ba15a13d4295a08d1736a",
+			"keccak256": "0x030d55129462df5bbd02366977b1e83872bc62296dfe5b6ece1532e40794b964",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://7557f71532d6e1e7383a88d35582963828a3e5c9fb2964e28870230120f7bbe6",
-				"dweb:/ipfs/QmSJfWJb5g3E5ZEJGBtNjg8GQ7qxtRMZ9LDovB8ZBvuUe2"
+				"bzz-raw://8973883b4e9c8a76af284c4f45360c9c71ac1ca90b1845f1411e436b3568e4b1",
+				"dweb:/ipfs/QmfKmD7ruFJ33yPTQgEzBazCL1CQRdnA2sY12E4dw4Yrx3"
 			]
 		}
 	},

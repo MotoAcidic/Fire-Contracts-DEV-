@@ -123,19 +123,6 @@
 				"type": "function"
 			},
 			{
-				"inputs": [],
-				"name": "totalSupply",
-				"outputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
 				"inputs": [
 					{
 						"internalType": "address",
@@ -202,7 +189,7 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"localhost/contracts/IFIRE.sol": "IFIRE"
+			"localhost/contracts/interfaces/IFIRE.sol": "IFIRE"
 		},
 		"evmVersion": "istanbul",
 		"libraries": {},
@@ -216,12 +203,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"localhost/contracts/IFIRE.sol": {
-			"keccak256": "0xa863285c2d9d6d2f9958d958c4e476c7389c403d728ba15a13d4295a08d1736a",
+		"localhost/contracts/interfaces/IFIRE.sol": {
+			"keccak256": "0x030d55129462df5bbd02366977b1e83872bc62296dfe5b6ece1532e40794b964",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://7557f71532d6e1e7383a88d35582963828a3e5c9fb2964e28870230120f7bbe6",
-				"dweb:/ipfs/QmSJfWJb5g3E5ZEJGBtNjg8GQ7qxtRMZ9LDovB8ZBvuUe2"
+				"bzz-raw://8973883b4e9c8a76af284c4f45360c9c71ac1ca90b1845f1411e436b3568e4b1",
+				"dweb:/ipfs/QmfKmD7ruFJ33yPTQgEzBazCL1CQRdnA2sY12E4dw4Yrx3"
 			]
 		}
 	},

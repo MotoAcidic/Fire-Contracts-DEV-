@@ -3,37 +3,12 @@
 pragma solidity ^0.6.0;
 
 import "./IFIRE.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/SafeMath.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Address.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/EnumerableSet.sol";
-
-abstract contract DEX {
-    
-    event Bought(uint256 amount);
-    event Sold(uint256 amount);
-
-    IFIRE public token;
-    
-    function buy() payable public {
-        uint256 amountTobuy = msg.value;
-        uint256 dexBalance = token.balanceOf(address(this));
-        require(amountTobuy > 0, "You need to send some Ether");
-        require(amountTobuy <= dexBalance, "Not enough tokens in the reserve");
-        token.transfer(msg.sender, amountTobuy);
-        emit Bought(amountTobuy);
-    }
-    
-    function sell(uint256 amount) public {
-        require(amount > 0, "You need to sell at least some tokens");
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        require(allowance >= amount, "Check the token allowance");
-        token.transferFrom(msg.sender, address(this), amount);
-        msg.sender.transfer(amount);
-        emit Sold(amount);
-    }
-
-}
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 contract FIRE is Context, IFIRE, AccessControl {
     using SafeMath for uint256;
@@ -392,8 +367,14 @@ contract FIRE is Context, IFIRE, AccessControl {
         uint256 calcBPD;
         uint256 convertToBasisPoints;
         //uint256 stakingTotal;
+        
         // Calculate total stakes
         totalStakes = totalStakes;
+        
+        // Calculation
+        //  staked tokens x 100 / total stakes = percentage in non decimal form
+        //  (bpd amount x percentage) / 100
+        
         
         //totalStakes = totalStakes.add(amountStaked);
         
